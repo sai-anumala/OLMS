@@ -1,0 +1,295 @@
+{
+  "users": [
+    {
+      "id": "9b34",
+      "username": "sairam",
+      "mobile": "9876543210",
+      "dob": "2025-10-28",
+      "email": "sairam02@gmail.com",
+      "password": "123456",
+      "role": "admin",
+      "cart": [
+        "3f1d"
+      ],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "6e47",
+      "username": "jithesh",
+      "mobile": "9876543210",
+      "dob": "2025-10-04",
+      "email": "Jithesh@gmail.com",
+      "password": "123456",
+      "role": "user",
+      "cart": [
+        "783e",
+        "3f1d",
+        "9f80"
+      ],
+      "borrowed_books": [
+        {
+          "bookid": "ae84",
+          "borrowDate": "2025-10-04",
+          "dueDate": "2025-10-18",
+          "fine": 0
+        },
+        {
+          "bookid": "3f1d",
+          "borrowDate": "2025-10-07",
+          "dueDate": "2025-10-21",
+          "fine": 0
+        }
+      ],
+      "fine": 0
+    },
+    {
+      "id": "4732",
+      "username": "datta anantha",
+      "mobile": "7725524311",
+      "dob": "2002-10-10",
+      "email": "datta@gmail.com",
+      "password": "1234567",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "7c5e",
+      "username": "Ramesh",
+      "mobile": "9550936290",
+      "dob": "2025-10-22",
+      "email": "ramesh@gmail.com",
+      "password": "Ramesh@123",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "9810",
+      "username": "shiva kumar",
+      "mobile": "9915426277",
+      "dob": "2000-10-10",
+      "email": "shivakumar@gmail.com",
+      "password": "Shiva@123",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "9810",
+      "username": "shiva kumar",
+      "mobile": "9915426277",
+      "dob": "2000-10-10",
+      "email": "shivakumar@gmail.com",
+      "password": "Shiva@123",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "e021",
+      "username": "rajesh",
+      "mobile": "9912625221",
+      "dob": "2002-10-10",
+      "email": "rajesh@gmail.com",
+      "password": "Raj@1234",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "e021",
+      "username": "rajesh",
+      "mobile": "9912625221",
+      "dob": "2002-10-10",
+      "email": "rajesh@gmail.com",
+      "password": "Raj@1234",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "ff9d",
+      "username": "ramkumar",
+      "mobile": "9912524998",
+      "dob": "2002-02-10",
+      "email": "ram@gmail.com",
+      "password": "123456",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "ff9d",
+      "username": "ramkumar",
+      "mobile": "9912524998",
+      "dob": "2002-02-10",
+      "email": "ram@gmail.com",
+      "password": "123456",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "ceea",
+      "username": "gopal",
+      "mobile": "7729927652",
+      "dob": "2002-02-11",
+      "email": "gopal@gmail.com",
+      "password": "123456",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "13f8",
+      "username": "nani",
+      "mobile": "9912625511",
+      "dob": "2002-02-10",
+      "email": "nani@gmail.com",
+      "password": "123456",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    },
+    {
+      "id": "8d6e",
+      "username": "saikumar",
+      "mobile": "9876543201",
+      "dob": "2025-09-30",
+      "email": "sai@gmail.com",
+      "password": "Sai@123",
+      "role": "user",
+      "cart": [],
+      "borrowed_books": [],
+      "fine": 0
+    }
+  ],
+  "books": [
+    {
+      "title": "Chronicles of the Lost City",
+      "author": "David Grann",
+      "image_link": "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2070&auto=format&fit=crop",
+      "rating": 4,
+      "reviews": "2.5k",
+      "availability": 10,
+      "description": "A historical account of a British explorer's quest to find a lost city in the Amazon.",
+      "isbn": "978-0385535140",
+      "pages": 432,
+      "published": "2009-09-15",
+      "genre": "Historical Fiction",
+      "id": "9f80",
+      "copies": 11
+    },
+    {
+      "title": "The Last Ember",
+      "author": "Sophia Wilson",
+      "image_link": "https://tinyurl.com/bvmmdknt",
+      "rating": 4.1,
+      "reviews": "1.1k",
+      "availability": 9,
+      "description": "A tale of a young girl's journey to save her village from an ancient curse.",
+      "isbn": "978-9916888176",
+      "pages": 300,
+      "published": "2017-03-22",
+      "genre": "Advanture",
+      "id": "3f1d"
+    },
+    {
+      "title": "Echoes of the Forgotten",
+      "author": "Lena Blackwood",
+      "image_link": "https://images.unsplash.com/photo-1529655683826-aba9b3e77383?q=80&w=2070&auto=format&fit=crop",
+      "rating": 4.3,
+      "reviews": "950",
+      "availability": 15,
+      "description": "A story of a lost civilization and the secrets it holds.",
+      "isbn": "978-9916888177",
+      "pages": 310,
+      "published": "2016-08-12",
+      "genre": "Fantasy",
+      "id": "783e"
+    },
+    {
+      "title": "The Moonlit Path",
+      "author": "Eleanor Frost",
+      "image_link": "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=2070&auto=format&fit=crop",
+      "rating": 4,
+      "reviews": "800",
+      "availability": 3,
+      "description": "A mystical journey through a world where dreams and reality intertwine.",
+      "isbn": "978-9916888178",
+      "pages": 280,
+      "published": "2015-11-18",
+      "genre": "Fantasy",
+      "id": "1e74"
+    },
+    {
+      "title": "Shadows of the Past",
+      "author": "Marcus Black",
+      "image_link": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop",
+      "rating": 4.4,
+      "reviews": "1.3k",
+      "availability": 11,
+      "description": "A detective's quest to uncover the truth behind a series of mysterious events.",
+      "isbn": "978-9916888179",
+      "pages": 350,
+      "published": "2014-06-25",
+      "genre": "Mystery",
+      "id": "039f"
+    },
+    {
+      "title": "The Crystal Key",
+      "author": "Isabella Moon",
+      "image_link": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2070&auto=format&fit=crop",
+      "rating": 4.5,
+      "reviews": "1k",
+      "availability": 6,
+      "description": "A young woman's discovery of a magical artifact that changes her destiny.",
+      "isbn": "978-9916888180",
+      "pages": 330,
+      "published": "2013-09-14",
+      "genre": "Fantasy",
+      "id": "8e80"
+    },
+    {
+      "title": "Wings of Destiny",
+      "author": "Ava Storm",
+      "image_link": "https://tinyurl.com/3sueyy2m",
+      "rating": 4.2,
+      "reviews": "900",
+      "availability": 0,
+      "description": "A tale of a young woman discovering her true potential in a world of magic.",
+      "isbn": "978-9916888181",
+      "pages": 340,
+      "published": "2012-12-02",
+      "genre": "Advanture",
+      "id": "ae84"
+    },
+    {
+      "title": "The Silent Watcher",
+      "author": "Liam Nightshade",
+      "image_link": "https://tinyurl.com/8r5d4ku6",
+      "rating": 4.3,
+      "reviews": "1.4k",
+      "availability": 4,
+      "description": "A guardian's journey to protect a powerful secret from those who seek to exploit it.",
+      "isbn": "978-9916888182",
+      "pages": 360,
+      "published": "2011-10-08",
+      "genre": "Thriller",
+      "id": "e203",
+      "copies": 20
+    }
+  ]
+}

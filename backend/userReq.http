@@ -1,0 +1,139 @@
+### add new user 
+POST http://localhost:8008/user-api/user
+Content-Type: application/json
+
+{
+    "username":"",
+    "mobile":98765432234,
+    "email":"jangm.aishu@gmail.com",
+    "password":"Aishu",
+    "cart": [],
+    "borrowed_books":[]
+}
+
+### login user
+POST http://localhost:8008/user-api/userLogin
+Content-Type: application/json
+
+{
+  "username":"sairam",
+  "password":"12345678"
+}
+### log out
+GET http://localhost:8008/user-api/user-logout
+
+### read all the books
+GET http://localhost:8008/book-api/books
+
+
+###delete book 
+DELETE http://localhost:8008/book-api/book/6900aca458ec212ff7e3b45b
+
+### add new book
+POST http://localhost:8008/book-api/book
+Content-Type: application/json
+ 
+{
+  "title": "The Great Gatsby",
+  "genre": "Classic",
+  "author": "F. Scott Fitzgerald",
+  "description": "A novel set in the Jazz Age...",
+  "copies": 10,
+  "availability": 7,
+  "isbn": "97807432s73565",
+  "image": "https://example.com/gatsby.jpg",
+  "pages": 180,
+  "published": "1925-04-10",
+  "rating": 4.5
+}
+
+###update book
+PUT http://localhost:8008/book-api/book
+Content-Type: application/json
+ 
+{
+  "_id":"6901bd99bbd4bcb8d8fbb896",
+  "copies": 40,
+  "availability": 0
+}
+
+### read all users details 
+GET http://localhost:8008/user-api/users
+
+
+### update user data
+PUT http://localhost:8008/admin-api/user-update
+Content-Type: application/json
+
+{
+    "_id":"6901dde6ad8cef068ba55ae0",
+    "username":"suresh",
+    "mobile":98765432234,
+    "email":"sureee@gmail.com"
+}
+
+### delete user
+PUT http://localhost:8008/admin-api/block-user
+Content-Type: application/json
+
+{
+    "userId":"6901dde6ad8cef068ba55ae0"
+}
+
+### add book id to cart
+PUT http://localhost:8008/user-api/user-cart/69009fef042c093476a0674c
+Content-Type: application/json
+
+{
+  "bookId": "69bf93e1a34af32e2ee8d013"
+}
+
+### delete book id to cart
+PUT http://localhost:8008/user-api/user-cart-delete/69009fef042c093476a0674c
+Content-Type: application/json
+
+{
+  "bookId": "6900aca458ec212ff7e3b45b"
+}
+
+### borrow book
+PUT http://localhost:8008/user-api/user-borrow
+Content-Type: application/json
+
+{
+  "bookId":"6900aca458ec212ff7e3b45b"
+}
+
+### return book
+
+PUT http://localhost:8008/user-api/return-book
+Content-Type: application/json
+
+{
+  "bookId":"6900aca458ec212ff7e3b45b"
+}
+
+### Borrow Cart Books
+PUT http://localhost:8008/user-api/borrow-cart-books
+Content-Type: application/json
+
+{
+  "books":["6900aca458ec212ff7e3b45c","6900aca458ec212ff7e3b460"]
+}
+
+### payment
+POST http://localhost:8008/transaction-api/transaction
+Content-Type: application/json
+
+{
+  "userId":"6903434be6fdb6034cbc1655",
+        "bookId":"6900aca458ec212ff7e3b45c",
+        "method":"wallet",
+        "amount":"200",
+        "paymentDetails":{
+                            "walletId":"456789"
+                          } 
+}
+
+### payment
+GET http://localhost:8008/transaction-api/read-transaction
