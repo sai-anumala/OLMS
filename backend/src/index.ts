@@ -11,7 +11,7 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 
 // create server
 const app=exp();
-config({ path: '../.env' })
+config()
 
 // cors accept forntend server
 app.use(cors({
