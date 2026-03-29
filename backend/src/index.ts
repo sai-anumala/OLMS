@@ -11,12 +11,11 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 
 // create server
 const app=exp();
-config()
+config({ path: '../.env' })
 
 // cors accept forntend server
 app.use(cors({
     origin:"http://localhost:5173",
-    
     credentials:true
 }))
 
@@ -33,6 +32,7 @@ const startServer=async():Promise<void>=>{
     await connectDB()
     try{
         app.listen(PORT,():void=>{
+          console.log("Server running on port number",PORT);
         })
     }catch(err){
         // Server startup failed
