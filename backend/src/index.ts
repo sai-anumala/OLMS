@@ -1,4 +1,5 @@
 import { config } from "dotenv"
+config();
 import { connectDB } from "./config/db"
 import { UserRoute } from "./routes/UserRoutes"
 import { BookRoute } from "./routes/BookRoutes"
@@ -11,7 +12,6 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 
 // create server
 const app=exp();
-config()
 
 // cors accept forntend server
 app.use(cors({
@@ -29,13 +29,14 @@ const PORT=process.env["PORT"] || 5000;
 
 // connect to database then start serever
 const startServer=async():Promise<void>=>{
-    await connectDB()
-    try{
+  try{
+        await connectDB()
         app.listen(PORT,():void=>{
           console.log("Server running on port number",PORT);
         })
     }catch(err){
         // Server startup failed
+        console.error("❌ Startup error:", err);
         process.exit(1)
     }
 }
