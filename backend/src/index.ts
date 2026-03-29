@@ -25,7 +25,7 @@ app.use(exp.json())
 // cookie parser middleware
 app.use(cookieParser())
 // port 
-const PORT=process.env["PORT"]
+const PORT=process.env["PORT"] || 5000;
 
 // connect to database then start serever
 const startServer=async():Promise<void>=>{
