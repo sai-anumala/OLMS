@@ -15,7 +15,7 @@ const app=exp();
 
 // cors accept forntend server
 const allowedOrigins = process.env.FRONTEND_URL
- ? process.env['FRONTEND_URL']split(",")
+ ? process.env['FRONTEND_URL'].split(",")
  : [];
 app.use(cors({
  origin: (origin, callback) => {
