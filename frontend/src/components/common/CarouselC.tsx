@@ -6,7 +6,7 @@ function CarouselC() {
   return (
     <div>
       <Carousel fade style={{width:"100%" }}>
-        {books.map((book) => (
+        {books.filter(obj=>obj.isDelete!==true).map((book) => (
           <Carousel.Item interval={1000} key={book._id}>
             <div
               className="row align-items-center  "
