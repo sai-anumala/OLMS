@@ -15,11 +15,9 @@ const app=exp();
 
 // cors accept forntend server
 app.use(cors({
-    origin:[
-    "https://www.olms.online",
-    "https://olms.online",
-    "http://localhost:5173"
-  ],
+    origin:process.env['FRONTEND_URL']
+  ? process.env['FRONTEND_URL'].split(",")
+  : [],
     credentials:true
 }))
 
