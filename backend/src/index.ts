@@ -14,7 +14,7 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 const app=exp();
 
 // cors accept forntend server
-const allowedOrigins = process.env.FRONTEND_URL
+const allowedOrigins = process.env['FRONTEND_URL']
  ? process.env['FRONTEND_URL'].split(",")
  : [];
 app.use(cors({
