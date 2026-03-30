@@ -39,7 +39,7 @@ function Navbar({ handleOpenProfile }:NavbarProps) {
               <span className="navbar-toggler-icon"></span>
             </button>
               {/* Navbar Content */}
-            <div className={`navbar-collapse ${isNavOpen ? "show" : "collapse"}`} id="nav-small-screen"><br />
+            <div className={`navbar-collapse ${isNavOpen ? "show" : "collapse"}`} id="nav-small-screen">
               {/* Search Bar */}
               <div className="input-group mx-auto" style={{maxWidth:"28rem"}}>
                 <span className="input-group">
@@ -47,8 +47,7 @@ function Navbar({ handleOpenProfile }:NavbarProps) {
                     <input type="text" id="search" value={searchTerm} className="form-control border border-start-0 rounded-end-3" placeholder="Search by Bookname, author, title..." onChange={(e) => setSearchTerm(e.target.value)}/>
                   </span>
               </div>
-            
-            <br />
+
           {/* Navigation Links (Conditional Rendering) */}
           {currentUser ? (
             currentUser.role==="user" ? (

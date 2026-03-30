@@ -20,8 +20,6 @@
   .navigation .navbar {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
-    /* Prevent navbar from shrinking too small on mobile */
-    min-width: 320px;
   }
 
   /* Make search bar full width on small screens */
