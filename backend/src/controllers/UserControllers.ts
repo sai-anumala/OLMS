@@ -64,8 +64,6 @@ export const loginUser=async(req:Request,res:Response)=>{
                     sameSite:"none",
                     secure:true,
                     maxAge:24*60*60*1000,
-                    domain:process.env["COOKIE_DOMAIN"],
-                    path:"/"
                 })
                 // send response back
                 res.status(200).json({message:"Logined Successfully..",payload:userData})
@@ -352,7 +350,6 @@ export const userLogout=async(req:Request,res:Response)=>{
         sameSite:"none",
         secure:true,
         maxAge:7*24*60*60*1000,
-        domain:process.env["COOKIE_DOMAIN"]
     })
 
     // send response
