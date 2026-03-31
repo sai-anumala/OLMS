@@ -8,6 +8,7 @@ export const verifyToken=async(req:Request,res:Response,next:NextFunction)=>{
         // get token from  cookies of req obj
         let token=req.cookies["token"]
         let secretKey=process.env["SECRET"]!
+        console.log('token and secrete :',token,secretKey)
         // verify token
         let decodedToken=verify(token,secretKey)
         // check decoded token
