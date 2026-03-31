@@ -45,10 +45,15 @@ function BookViewModal() {
                         }}>
                         {/* The modal content remains the same */}
                         <Row>
-                            <Col>
-                                <img src={modalData.image} alt={modalData.title} width={"100%"} height={"250px"} className="rounded-2" />
+                            <Col xs={12} md={6}>
+                                <img
+                                    src={modalData.image}
+                                    alt={modalData.title}
+                                    style={{ width: '100%', height: '250px', objectFit: 'cover' }}
+                                    className="rounded-2"
+                                />
                             </Col>
-                            <Col>
+                            <Col xs={12} md={6}>
                                 <h4>{modalData.title}</h4>
                                 <span className="text-secondary">
                                     <LuUser /> {modalData.author}
@@ -65,7 +70,7 @@ function BookViewModal() {
                                     </span>
                                 </p>
                                 <div className="d-flex">
-                                    {modalData.availability===0 || modalData.status===false ? 
+                                    {modalData.availability===0 || modalData.status===false ?
                                         <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}>
                                             Not Available
                                         </span>
@@ -108,17 +113,17 @@ function BookViewModal() {
                                 {modalData.availability===0 || modalData.status===false ? (
                                     <p className="border text-secondary rounded-3 ps-2">This book is currently unavailable....</p>
                                 ):
-                                (<div className="d-flex justify-between mb-2">
+                                (<div className="d-flex flex-column flex-md-row gap-2 mb-2">
                                     <span>
-                                        <button className="btn btn-warning" disabled={modalData.availability===0} onClick={()=>{if(modalData._id){bookAddToCart(modalData._id)}}}>
+                                        <button className="btn btn-warning w-100" disabled={modalData.availability===0} onClick={()=>{if(modalData._id){bookAddToCart(modalData._id)}}}>
                                             <span>
                                                 <CiShoppingCart className="fs-5 me-1 cart-icon-transition" />
                                             </span>
                                             Add Cart
                                         </button>
                                     </span>
-                                    <span className="ms-auto">
-                                        <button className="btn btn-dark text-white" disabled={modalData.availability===0}  onClick={()=>{if(modalData._id && currentUser?._id){bookBorrow(modalData._id)}}}>
+                                    <span className="w-100">
+                                        <button className="btn btn-dark text-white w-100" disabled={modalData.availability===0}  onClick={()=>{if(modalData._id && currentUser?._id){bookBorrow(modalData._id)}}}>
                                             Borrow
                                             <BiArrowFromLeft className="fs-5" />
                                         </button>
