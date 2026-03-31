@@ -12,7 +12,7 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 
 // create server
 const app=exp();
-
+app.set("trust proxy", 1);
 // cors accept forntend server
 const allowedOrigins = process.env['FRONTEND_URL']
  ? process.env['FRONTEND_URL'].split(",")
