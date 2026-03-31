@@ -61,7 +61,7 @@ export const loginUser=async(req:Request,res:Response)=>{
                 // store token in httpOnly cookie (for security)
                 res.cookie("token",signedToken,{
                     httpOnly:true,
-                    sameSite:"lax",
+                    sameSite:"none",
                     secure:true,
                     maxAge:24*60*60*1000
                 })
@@ -347,7 +347,7 @@ export const userLogout=async(req:Request,res:Response)=>{
     // clear token 
     res.clearCookie("token",{
         httpOnly:true,
-        sameSite:"lax",
+        sameSite:"none",
         secure:true,
         maxAge:7*24*60*60*1000
     })
