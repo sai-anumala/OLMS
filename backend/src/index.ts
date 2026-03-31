@@ -29,9 +29,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
-app.options("*", cors()); // enable pre-flight for all routes
-
+ 
 // body parser middleware
 app.use(exp.json())
 
