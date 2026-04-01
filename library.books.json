@@ -1,0 +1,177 @@
+[{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b45b"
+  },
+  "title": "Chronicles of the Lost City",
+  "author": "David Gran",
+  "rating": 1,
+  "availability": 15,
+  "description": "A historical account of a British explorer's quest to find a lost city in the Amazon.",
+  "isbn": "978-0385535140",
+  "pages": 40,
+  "published": "2009-09-15",
+  "genre": "Historical Fiction",
+  "copies": 11,
+  "image": "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2070&auto=format&fit=crop",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b45c"
+  },
+  "title": "The Last Ember",
+  "author": "Sophia Wilson",
+  "rating": 4.1,
+  "availability": 1,
+  "description": "A tale of a young girl's journey to save her village from an ancient curse.",
+  "isbn": "978-9916888176",
+  "pages": 300,
+  "published": "2017-03-22",
+  "genre": "Advanture",
+  "image": "https://tinyurl.com/bvmmdknt",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b45d"
+  },
+  "title": "Echoes of the Forgotten",
+  "author": "Lena Blackwood",
+  "rating": 4.3,
+  "availability": 12,
+  "description": "A story of a lost civilization and the secrets it holds.",
+  "isbn": "978-9916888177",
+  "pages": 310,
+  "published": "2016-08-12",
+  "genre": "Fantasy",
+  "image": "https://images.unsplash.com/photo-1529655683826-aba9b3e77383?q=80&w=2070&auto=format&fit=crop",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b45e"
+  },
+  "title": "The Moonlit Path",
+  "author": "Eleanor Frost",
+  "rating": 4,
+  "availability": 10,
+  "description": "A mystical journey through a world where dreams and reality intertwine.",
+  "isbn": "978-9916888178",
+  "pages": 280,
+  "published": "2015-11-18",
+  "genre": "Fantasy",
+  "image": "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=2070&auto=format&fit=crop",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b45f"
+  },
+  "title": "Shadows of the Past",
+  "author": "Marcus Black",
+  "rating": 4.4,
+  "availability": 8,
+  "description": "A detective's quest to uncover the truth behind a series of mysterious events.",
+  "isbn": "978-9916888179",
+  "pages": 350,
+  "published": "2014-06-25",
+  "genre": "Mystery",
+  "image": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2070&auto=format&fit=crop",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b460"
+  },
+  "title": "The Crystal Key",
+  "author": "Isabella Moon",
+  "rating": 4.5,
+  "availability": 5,
+  "description": "A young woman's discovery of a magical artifact that changes her destiny.",
+  "isbn": "978-9916888180",
+  "pages": 330,
+  "published": "2013-09-14",
+  "genre": "Fantasy",
+  "image": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2070&auto=format&fit=crop",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b461"
+  },
+  "title": "Wings of Destiny",
+  "author": "Ava Storm",
+  "rating": 4.2,
+  "availability": 0,
+  "description": "A tale of a young woman discovering her true potential in a world of magic.",
+  "isbn": "978-9916888181",
+  "pages": 340,
+  "published": "2012-12-02",
+  "genre": "Advanture",
+  "image": "https://tinyurl.com/3sueyy2m",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "6900aca458ec212ff7e3b462"
+  },
+  "title": "The Silent Watcher",
+  "author": "Liam Nightshade",
+  "rating": 4,
+  "availability": 1,
+  "description": "A guardian's journey to protect a powerful secret from those who seek to exploit it.",
+  "isbn": "978-9916888182",
+  "pages": 360,
+  "published": "2011-10-08",
+  "genre": "History",
+  "copies": 20,
+  "image": "https://tinyurl.com/8r5d4ku6",
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "69087758e2ed24a87ec97721"
+  },
+  "title": "GlobalTrotter",
+  "genre": "Thriller/Suspense",
+  "author": "S.S.Rajamouli",
+  "description": "A man travels whole world TO FIND TREASURkE...",
+  "copies": 8,
+  "availability": 8,
+  "isbn": "2345678",
+  "image": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.thehindu.com%2Fentertainment%2Fmovies%2Fglobetrotter-ss-rajamouli-shares-first-glimpse-of-mahesh-babu-priyanka-chopra-film%2Farticle69913135.ece&psig=AOvVaw050XmUVd5uDaWNglIhq6aA&ust=1762248365002000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCOCz5vDU1ZADFQAAAAAdAAAAABAE",
+  "pages": 22,
+  "published": "2025-11-04",
+  "rating": 8,
+  "createdAt": {
+    "$date": "2025-11-03T09:35:20.497Z"
+  },
+  "status": true,
+  "isDelete": false
+},
+{
+  "_id": {
+    "$oid": "690bee13abc5906843abd1da"
+  },
+  "title": "mahishmathi",
+  "genre": "History",
+  "author": "rajendra prasad",
+  "description": "A tale of place which turns to kingodm...",
+  "copies": 30,
+  "availability": 20,
+  "isbn": "9783398080090",
+  "image": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.thehindu.com%2Fentertainment%2Fmovies%2Fglobetrotter-ss-rajamouli-shares-first-glimpse-of-mahesh-babu-priyanka-chopra-film%2Farticle69913135.ece&psig=AOvVaw050XmUVd5uDaWNglIhq6aA&ust=1762248365002000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCOCz5vDU1ZADFQAAAAAdAAAAABAE",
+  "pages": 243,
+  "published": "2025-10-31",
+  "rating": 4,
+  "status": false,
+  "isDelete": false
+}]
