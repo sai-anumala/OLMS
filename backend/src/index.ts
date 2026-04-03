@@ -104,7 +104,7 @@ app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
 
   res.status(statusCode).json({
     success: false,
-    message: message,
+    error: message,
   });
 
 });

@@ -1,0 +1,98 @@
+/* underline for navlink while hover */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 0;
+  height: 2px;
+  background-color: #0a0a0a;
+  transition:width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Responsive styles for Navbar */
+@media (max-width: 768px) {
+  /* Adjust navbar padding for mobile */
+  .navigation .navbar {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Make search bar full width on small screens */
+  .input-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Adjust logo and app name spacing */
+  .no-link-style {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Adjust navbar brand size on mobile */
+  .no-link-style .fs-4 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Adjust icon sizes */
+  .no-link-style .fa-book {
+    font-size: 1.5rem !important;
+  }
+
+  /* Stack navigation links vertically on very small screens */
+  @media (max-width: 480px) {
+    .d-flex.gap-4.align-items-center.mx-auto.p-4,
+    .d-flex.align-items-center.gap-4.mx-auto {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .nav-link {
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+
+    /* Adjust button sizes for public links */
+    .btn {
+      width: 100%;
+      padding: 0.5rem;
+    }
+  }
+}
+
+/* Adjust for landscape mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .input-group {
+    max-width: 400px;
+  }
+}
+
+/* Fix icon and text alignment on small screens */
+@media (max-width: 480px) {
+  .SiBookstack,
+  .SlBasketLoaded,
+  .CgProfile {
+    font-size: 1.1rem;
+    margin: 0 0.1rem;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Ensure text and icon stay on same line */
+  .nav-link {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+  }
+
+  /* For profile icon only (no text) */
+  .nav-link:has(.CgProfile):not(:has(.SiBookstack)):not(:has(.SlBasketLoaded)) {
+    justify-content: center;
+  }
+}
