@@ -55,7 +55,7 @@ export const loginUser=async(req:Request,res:Response)=>{
             }
             else{
                 // create token using JWT by using sign() method
-                let {password,...userData}=userObj.toObject()   // remove password in useroBj
+                let {password,cart,borrowed_books,return_books,...userData}=userObj.toObject()   // remove password in useroBj
                 // generate signed token
                 let signedToken=sign({user:userData},process.env["SECRET"]!,{expiresIn:"1d"})  //for pa
                 // store token in httpOnly cookie (for security)
