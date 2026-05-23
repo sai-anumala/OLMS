@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser'
 import exp, { NextFunction, Request, Response } from "express"
 import cors from "cors"
 import { TransactionRoute } from "./routes/TransactionRoutes"
+import { chatbot } from "./controllers/BookControllers";
 
 // create server
 const app=exp();
@@ -75,6 +76,9 @@ app.get("/refresh",verifyToken,(req:Request,res:Response)=>{
     res.status(401).json({message:"page refreshed",payload:null})
    }
 })
+
+app.post("/chatbot",chatbot);
+
 // error handling middleware
 // app.use((err:Error,req:Request,res:Response,next:NextFunction)=>{
 //     res.status(400).json({message:err.message})
