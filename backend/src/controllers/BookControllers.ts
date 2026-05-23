@@ -114,6 +114,7 @@ export const deleteBook = async (req: Request, res: Response) => {
 
 // -------------------- Book Status Update--------------------
 export const bookStatusUpate = async (req: Request, res: Response) => {
+  // existing code...
   // get id from the url params
   let bookId = req.body["bookId"];
 
@@ -157,34 +158,48 @@ export const bookStatusUpate = async (req: Request, res: Response) => {
 
 export const chatbot = async (req: Request, res: Response) => {
   try {
-    const { message } = await req.body;
-
-    const response = await fetch(
+    const { message } = req.body;
+    console.log("message :",message)
+    if (!message) {
+      return res.status(400).json({ message: "No query provided" });
+    }
+    // Search the books collection for matching fields
+    const query = {
+      $or: [
+        { title: { $regex: message, $options: "i" } },
+        { genre: { $regex: message, $options: "i" } },
+        { author: { $regex: message, $options: "i" } },
+        { description: { $regex: message, $options: "i" } },
+      ],
+    };
+    const books = await BookModel.find(query);
+    console.log('books :',books)
+    if (!books || books.length === 0) {
+        const reply = "Sorry, no books found matching your search.";
+        return res.status(200).json({ reply, payload: [] });
+    }
+    // Build prompt for AI including found books data
+    const prompt = `User query: "${message}". Here are the matching books from the library (title, author, genre, description):\n${JSON.stringify(
+      books,
+      null,
+      2,
+    )}\nProvide a friendly response summarizing the results.`;
+    const aiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env["GEMINI_API_KEY"]}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: message }],
-            },
-          ],
+          contents: [{ parts: [{ text: prompt }] }],
         }),
       },
     );
-
-    const data = await response.json();
-    console.log("API DATA:", data);
-
+    const aiData = await aiResponse.json();
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
-    console.log("api response obj :", data);
-    res.status(200).json({ reply });
+      aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no books found matching your search.";
+    return res.status(200).json({ reply, payload: books });
   } catch (error) {
-    console.error("ERROR:", error);
-    res.status(500).json({ error: "Something went wrong" });
+    console.error(error);
+    return res.status(500).json({ error: "Something went wrong" });
   }
 };

@@ -30,7 +30,7 @@ export default function ChatBot() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { text: "Error: Failed to get response", sender: "bot" },
+          { text: res.message?.text || "Error: Failed to get response", sender: "bot" },
         ]);
       }
     } finally {
