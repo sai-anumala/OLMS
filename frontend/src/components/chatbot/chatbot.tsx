@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import chatbot from "../../services/common/chatbot";
 
 type Message = {
@@ -8,17 +9,37 @@ type Message = {
 };
 
 export default function ChatBot() {
-  const [messages, setMessages] = useState<Message[]>([{ text: "Welcome to OLMS! How can we help you?", sender: "bot" }]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      text: "Welcome to OLMS! How can we help you?",
+      sender: "bot",
+    },
+  ]);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Auto scroll ref
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto scroll effect
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage: Message = { text: input, sender: "user" };
+    const userMessage: Message = {
+      text: input,
+      sender: "user",
+    };
 
-    // Update UI immediately
+    // Show user message instantly
     setMessages((prev) => [...prev, userMessage]);
+
     setInput("");
     setLoading(true);
 
@@ -26,71 +47,192 @@ export default function ChatBot() {
       const res = await chatbot(input);
 
       if (res.status === 200) {
-        setMessages((prev) => [...prev, (res.message as Message)]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: res.message.text,
+            sender: "bot",
+          },
+        ]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { text: res.message?.text || "Error: Failed to get response", sender: "bot" },
+          {
+            text: "Failed to get response",
+            sender: "bot",
+          },
         ]);
       }
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: "Something went wrong.",
+          sender: "bot",
+        },
+      ]);
     } finally {
-      // Ensure loading state is cleared regardless of success or error
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 20, width: 400, maxWidth: 400, margin: "auto" }}>
-      
-      {/* Chat Box */}
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "420px",
+        margin: "20px auto",
+        borderRadius: "20px",
+        overflow: "hidden",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+        background: "#fff",
+        border: "1px solid #e5e5e5",
+        display: "flex",
+        flexDirection: "column",
+        height: "500px",
+      }}
+    >
+      {/* Header */}
       <div
         style={{
-          height: "400px",
-          overflowY: "auto",
-          border: "1px solid #ccc",
-          padding: 10,
-          borderRadius: 10,
+          background: "#111827",
+          color: "white",
+          padding: "16px",
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: "18px",
         }}
       >
-        <h5 style={{textAlign:'center',margin:'10px 0px 30px 0px',fontFamily:'italic'}}>OLMS AI Assistant</h5>
+        OLMS AI Assistant
+      </div>
+
+      {/* Chat Messages */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "16px",
+          background: "#f5f5f5",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
             style={{
-              textAlign: msg.sender === "user" ? "right" : "left",
-              marginBottom: 10,
+              display: "flex",
+              justifyContent:
+                msg.sender === "user"
+                  ? "flex-end"
+                  : "flex-start",
             }}
           >
-
-            <span
+            <div
               style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: 10,
+                maxWidth: "80%",
+                padding: "12px 16px",
+                borderRadius: "18px",
+                fontSize: "15px",
+                lineHeight: "1.6",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
                 background:
-                  msg.sender === "user" ? "#0070f3" : "#e5e5ea",
-                color: msg.sender === "user" ? "#000" : "#000",
+                  msg.sender === "user"
+                    ? "#2563eb"
+                    : "#ffffff",
+                color:
+                  msg.sender === "user"
+                    ? "#ffffff"
+                    : "#111827",
+                border:
+                  msg.sender === "bot"
+                    ? "1px solid #e5e7eb"
+                    : "none",
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.08)",
               }}
             >
               {msg.text}
-            </span>
+            </div>
           </div>
         ))}
 
         {/* Loading */}
-        {loading && <p>🤖 AI is typing...</p>}
+        {loading && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-start",
+            }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                padding: "12px 16px",
+                borderRadius: "18px",
+                border: "1px solid #e5e7eb",
+                color: "#555",
+                fontSize: "14px",
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.08)",
+              }}
+            >
+              🤖 AI is typing...
+            </div>
+          </div>
+        )}
+
+        {/* Auto Scroll Target */}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+      {/* Input Area */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          padding: "14px",
+          borderTop: "1px solid #e5e7eb",
+          background: "#fff",
+        }}
+      >
         <input
+          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
-          style={{ flex: 1, padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) =>
+            e.key === "Enter" && sendMessage()
+          }
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            padding: "12px 14px",
+            borderRadius: "12px",
+            border: "1px solid #d1d5db",
+            outline: "none",
+            fontSize: "14px",
+          }}
         />
-        <button onClick={sendMessage} disabled={loading} style={{border:'none',background:'none'}}>
+
+        <button
+          onClick={sendMessage}
+          disabled={loading}
+          style={{
+            padding: "12px 18px",
+            borderRadius: "12px",
+            border: "none",
+            background: loading
+              ? "#93c5fd"
+              : "#2563eb",
+            color: "white",
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
+            fontWeight: "bold",
+          }}
+        >
           Send
         </button>
       </div>

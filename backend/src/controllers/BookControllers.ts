@@ -195,6 +195,7 @@ export const chatbot = async (req: Request, res: Response) => {
       },
     );
     const aiData = await aiResponse.json();
+    console.log('ai data ;',aiData)
     const reply =
       aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no books found matching your search.";
     return res.status(200).json({ reply, payload: books });
