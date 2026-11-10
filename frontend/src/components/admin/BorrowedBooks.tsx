@@ -1,6 +1,6 @@
 import  { useState, useEffect } from 'react';
-import { fetchBooks } from "../../store/BooksContext";
-import { fetchUsers } from "../../store/UserContext";
+import { useBooks } from "../../store/BooksContext";
+import { useUsers } from "../../store/UserContext";
 
 type BorrowedItem ={
   author:string ;
@@ -17,8 +17,8 @@ function BorrowedBooks() {
     const [borrowedData, setBorrowedData]=useState<BorrowedItem[]>([]);
     
     // getting books and users data
-    const { users }=fetchUsers() 
-    const { books }=fetchBooks() 
+    const { users }=useUsers() 
+    const { books }=useBooks() 
     
     useEffect(()=>{
         if (!users || !books ) {

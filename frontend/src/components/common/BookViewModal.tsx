@@ -1,5 +1,5 @@
 import { Button, Col, Modal, ModalBody, Row } from "react-bootstrap";
-import { fetchBooks } from "../../store/BooksContext";
+import { useBooks } from "../../store/BooksContext";
 import { useState } from "react";
 import type { BookType } from "../../types/BookType";
 import { LuUser } from "react-icons/lu";
@@ -14,7 +14,7 @@ function BookViewModal() {
     const [showModal,setShowModal]=useState<boolean>(false);
     const [modalData,setModalData]=useState<BookType | null>(null);
 
-    const {books}=fetchBooks()
+    const {books}=useBooks()
     const {currentUser,bookAddToCart,bookBorrow}=useAuth()
 
     const handleViewDetails=(book:BookType)=>{
@@ -79,7 +79,7 @@ function BookViewModal() {
                                             Available
                                         </span>
                                     )}
-                                    <span className="ms-3 text-secondary">{modalData.availability} out of 20</span>
+                                    <span className="ms-3 text-secondary">{modalData.availability} out of {modalData.copies ?? modalData.availability}</span>
                                 </div>
                                 <hr />
                                 <h5>Description</h5>
@@ -106,7 +106,7 @@ function BookViewModal() {
                                         <span>
                                             <b>Available:</b>
                                         </span>
-                                        <p>{modalData.availability} out of 20</p>
+                                        <p>{modalData.availability} out of {modalData.copies ?? modalData.availability}</p>
                                     </Col>
                                 </Row>
                                 <hr />

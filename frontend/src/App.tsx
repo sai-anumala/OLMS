@@ -49,7 +49,7 @@ function App() {
         },
       {
           path:"user",
-          element:<ProtectedRoute><RootLayout/></ProtectedRoute>,
+          element:<ProtectedRoute role="user"><RootLayout/></ProtectedRoute>,
           children:[
             {
               path:"books",
@@ -91,7 +91,7 @@ function App() {
     },
     {
       path:"admin",
-      element:<ProtectedRoute><RootLayout/></ProtectedRoute>,
+      element:<ProtectedRoute role="admin"><RootLayout/></ProtectedRoute>,
       children:[{
           index:true,
           element:<AdminDashboard/>

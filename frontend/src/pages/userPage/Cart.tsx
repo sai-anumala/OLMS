@@ -1,7 +1,7 @@
 
 import type { BookType } from "../../types/BookType";
 import { Button, Col, Modal, ModalBody, Row } from "react-bootstrap";
-import { fetchBooks } from "../../store/BooksContext";
+import { useBooks } from "../../store/BooksContext";
 import { FaStar } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { BookCard } from "../../components/user/CartBookCard";
@@ -18,7 +18,7 @@ function Cart() {
   const [cartBooks, setCartBooks] = useState<BookType[]>([]);
  
   const { currentUser, cartBooksBorrow } = useAuth();
-  const { books } = fetchBooks();
+  const { books } = useBooks();
   const navigate = useNavigate();
  
   const handleViewDetails = (book: BookType) => {
@@ -125,7 +125,7 @@ function Cart() {
                   <span className="bg-dark text-white p-2 rounded-4" style={{ fontSize: "0.7rem" }}>
                     {modalData.availability === 0 ? "Not Available" : "Available"}
                   </span>
-                  <span className="ms-3 text-secondary">{modalData.availability} out of 20</span>
+                  <span className="ms-3 text-secondary">{modalData.availability} out of {modalData.copies ?? modalData.availability}</span>
                 </div>
                 <hr />
                 <h5>Description</h5>
@@ -142,7 +142,7 @@ function Cart() {
                     <b>Pages:</b>
                     <p>{modalData.pages}</p>
                     <b>Available:</b>
-                    <p>{modalData.availability} out of 20</p>
+                    <p>{modalData.availability} out of {modalData.copies ?? modalData.availability}</p>
                   </Col>
                 </Row>
                 <hr />

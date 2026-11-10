@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Col, Row } from 'react-bootstrap'
-import { fetchBooks } from '../../store/BooksContext'
+import { useBooks } from '../../store/BooksContext'
 import { TiEdit } from 'react-icons/ti'
 import { IoStarHalfSharp } from 'react-icons/io5'
 import AddBook from "../../components/admin/AddBook";
@@ -16,7 +16,7 @@ function BooksList() {
   const [editBookId,setEditBookId]=useState<string >("")
   
   // books data and deleteBook function from context
-  const {books,deleteBook,updateBookStatus}=fetchBooks()
+  const {books,deleteBook,updateBookStatus}=useBooks()
 
   // function to handle add book modal 
   const handleShow=()=>setShowModal(true);

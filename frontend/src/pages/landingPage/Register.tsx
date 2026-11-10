@@ -25,13 +25,13 @@ function Register() {
     setIsLoading(true);
     setStatus('');
      setIsSuccess(null);
-     const userDataWithRole={
-      ...data,
-      role:'user',
-      cart:[],
-      borrowed_books:[],
-      fine:0
-    };
+     // send only what the user typed; the server decides role, fine, cart etc.
+     const newUser={
+      username:data.username,
+      mobile:data.mobile,
+      email:data.email,
+      password:data.password
+    } as UserType;
     // try {
     //   await registerUser(userDataWithRole);
     //   setStatus("Successfully registered.");
@@ -47,16 +47,23 @@ function Register() {
     // } finally {
     //   setIsLoading(false);
     // }
-   const regiStatus= await registerApi(userDataWithRole)
-   if(regiStatus.status===201){
+   try{
+     const regiStatus= await registerApi(newUser)
+     if(regiStatus.status===201){
+        setStatus(regiStatus.data.message)
+        setIsSuccess(true)
+        setTimeout(()=>navigate("/login"),2000)
+     }
+     else{
       setStatus(regiStatus.data.message)
-      setIsSuccess(true)
-      setTimeout(()=>navigate("/login"),2000)
+      setIsSuccess(false)
+     }
+   }catch{
+     setStatus("Could not reach the server, please try again")
+     setIsSuccess(false)
+   }finally{
+     setIsLoading(false);
    }
-   else{
-    setStatus(regiStatus.data.message)
-   }
-   setIsLoading(false);
   };
 
   return (
@@ -129,6 +136,10 @@ function Register() {
             className={`form-control ${errors.password ? 'is-invalid' : ''}`}
             {...register('password', {
               required: 'Password is required',
+              minLength: {
+                value: 6,
+                message: 'Password must be at least 6 characters'
+              },
               // pattern: {
               //   value: /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/,
               //   message: 'Password must start with a capital letter, include a number and special character'

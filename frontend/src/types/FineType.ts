@@ -1,7 +1,12 @@
+// The CVV is only checked in the form and is never sent to the server
 export type CardDetailsType={
   card_number: string;
   exp_date: string;
-  cvv: string;
+};
+
+// what the server keeps for a card payment (never the full number)
+export type StoredCardDetailsType={
+  last4: string;
 };
 
 export type UpiDetailsType={
@@ -14,10 +19,10 @@ export type WalletDetailsType={
 
 export type PaymentMethodType="card" | "upi" | "wallet";
 
-export type PaymentDetailsType=CardDetailsType | UpiDetailsType | WalletDetailsType;
+export type PaymentDetailsType=CardDetailsType | StoredCardDetailsType | UpiDetailsType | WalletDetailsType;
 
+// the payer is taken from the login session on the server, so no userId is sent
 export interface PaymentFormType{
-  userId?:string;
   bookId:string; 
   amount:number;
   paymentMethod:PaymentMethodType;

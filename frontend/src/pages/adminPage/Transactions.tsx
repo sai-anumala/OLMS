@@ -1,6 +1,6 @@
 import { Col, Row } from 'react-bootstrap';
-import { fetchUsers } from '../../store/UserContext';
-import { fetchBooks } from '../../store/BooksContext';
+import { useUsers } from '../../store/UserContext';
+import { useBooks } from '../../store/BooksContext';
 import type { TransactionFormType } from '../../types/FineType';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContextProvider';
@@ -9,23 +9,34 @@ import { getTransactionData } from '../../services/admin/TransactionDetails';
 
 function Transactions() {
   const { currentUser } = useAuth();
-  const { users, } = fetchUsers();
-  const { books } = fetchBooks();
+  const { users, } = useUsers();
+  const { books } = useBooks();
 
   const [transactions, setTransactions] = useState<TransactionFormType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // fetch users
   const username = (userId: string) => {
-    let user = users.find(userObj => userObj._id === userId);
+    const user = users.find(userObj => userObj._id === userId);
     return user ? user.username : "unknown user";
   };
 
   // fetch books
   const bookName = (bookId: string) => {
-    let book = books.find(bookObj => bookObj._id === bookId);
+    const book = books.find(bookObj => bookObj._id === bookId);
     return book ? book.title : "unknown book";
   };
+
+  // each member has one transaction document holding all their payments,
+  // so flatten them into one row per payment, newest first
+  const paymentRows = transactions
+    .flatMap(transactionObj => transactionObj.payments.map((payment, index) => ({
+      key: `${transactionObj._id}-${payment._id ?? index}`,
+      transactionId: transactionObj._id,
+      userId: transactionObj.userId,
+      payment,
+    })))
+    .sort((a, b) => new Date(b.payment.createdAt ?? 0).getTime() - new Date(a.payment.createdAt ?? 0).getTime());
 
   // fetch transactions only if user is admin
   useEffect(() => {
@@ -42,7 +53,7 @@ function Transactions() {
         } else {
           setTransactions([]);
         }
-      } catch (err) {
+      } catch {
         toast.error('Failed to fetch transactions');
         setTransactions([]);
       } finally {
@@ -80,7 +91,7 @@ function Transactions() {
 
   return (
     <div>
-      {transactions.length !== 0 ? (
+      {paymentRows.length !== 0 ? (
         <div>
           <div className="border py-3 rounded-2 mt-3 m-3 w-75 mx-auto">
             <Row>
@@ -97,7 +108,7 @@ function Transactions() {
             <div className="table-responsive">
               <table className="table align-middle">
                 <caption className='caption-top text-start fs-6 px-3'>
-                  Transactions <span className='border rounded-5 py-1 px-2 bg-dark text-white'>{transactions.length}</span>
+                  Transactions <span className='border rounded-5 py-1 px-2 bg-dark text-white'>{paymentRows.length}</span>
                 </caption>
                 <thead className='align-items-center'>
                   <tr>
@@ -110,25 +121,26 @@ function Transactions() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((transactionObj: TransactionFormType) => (
-                    <tr key={transactionObj._id} style={{ color: "#F7F7F7" }}>
+                  {paymentRows.map(({ key, transactionId, userId, payment }) => (
+                    <tr key={key} style={{ color: "#F7F7F7" }}>
                       <td colSpan={2} className='align-middle text-capitalize'>
-                        {username(transactionObj.userId)}
+                        {username(userId)}
                       </td>
                       <td className='align-middle text-capitalize text-truncate'>
-                        {transactionObj.payments[0] ? bookName(transactionObj.payments[0].bookId) : "N/A"}
+                        {bookName(payment.bookId)}
                       </td>
                       <td className='align-middle text-success fw-bold'>
-                        {transactionObj.payments[0] ? new Date(transactionObj.payments[0].createdAt || new Date()).toLocaleDateString() : "N/A"}
+                        {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : "N/A"}
                       </td>
                       <td className='align-middle'>
                         <span className='text-warning fw-bold rounded-5 px-2 text-md-truncate'>
-                          {transactionObj.payments[0]?.amount ?? 0}
+                          {payment.amount ?? 0}
                         </span>
                       </td>
-                      <td className='align-middle'>{transactionObj._id}</td>
+                      <td className='align-middle'>{transactionId}</td>
                       <td className='align-middle text-success fw-bold text-capitalize'>
-                        {transactionObj.payments[0]?.paymentMethod ?? "--"}
+                        {payment.paymentMethod ?? "--"}
+                        {"last4" in payment.paymentDetails && <span className='text-muted fw-normal'> ••{payment.paymentDetails.last4}</span>}
                       </td>
                     </tr>
                   ))}

@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import UserGreet from "../components/user/UserGreet";
 import { useAuth } from "../store/AuthContextProvider";
 
-// Mock the entire AuthContextProvider module
-jest.mock("../store/AuthContextProvider");
+// Mock only the useAuth hook (a factory mock avoids loading the real module, which uses Vite-only import.meta)
+jest.mock("../store/AuthContextProvider", () => ({ useAuth: jest.fn() }));
 
 describe("UserGreet Component", () => {
   beforeEach(() => {

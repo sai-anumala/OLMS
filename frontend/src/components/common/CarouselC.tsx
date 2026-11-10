@@ -1,8 +1,8 @@
 import {  Carousel } from "react-bootstrap";
-import { fetchBooks } from "../../store/BooksContext";
+import { useBooks } from "../../store/BooksContext";
 
 function CarouselC() {
-  const { books } = fetchBooks();
+  const { books } = useBooks();
   return (
     <div>
       <Carousel fade style={{width:"100%" }}>

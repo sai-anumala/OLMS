@@ -1,5 +1,5 @@
 import type { BorrowedBookType } from "../../types/UserType";
-import { fetchBooks } from "../../store/BooksContext";
+import { useBooks } from "../../store/BooksContext";
 import { useAuth } from "../../store/AuthContextProvider";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,7 +19,7 @@ type PaymentFormData = {
  
 function BorrowedBooksList() {
   const { currentUser, returnBook, payFine }=useAuth();
-  const { books } = fetchBooks();
+  const { books } = useBooks();
  
   const [selectedMethod, setSelectedMethod]=useState<"card"|"wallet"|"upi">("card");
   const {register,handleSubmit,formState: { errors }} = useForm<PaymentFormData>();
@@ -44,25 +44,24 @@ function BorrowedBooksList() {
     let paymentInfo:PaymentDetailsType;
 
     if (data.paymentMethod==="card") {
+      // the CVV is validated in the form but never sent or stored
       paymentInfo={
-        card_number:data.cardNumber,
-        exp_date:data.expiry,
-        cvv:data.cvv
+        card_number:data.cardNumber ?? "",
+        exp_date:data.expiry ?? ""
       };
     } else if(data.paymentMethod==="upi") {
       paymentInfo={
-        upiId:data.upiId
+        upiId:data.upiId ?? ""
       };
     } else if (data.paymentMethod==="wallet") {
       paymentInfo={
-        walletId:data.walletId
+        walletId:data.walletId ?? ""
       };
     } else {
       throw new Error("Invalid payment method");
     }
 
     const paymentDetails:PaymentFormType = {
-      userId:currentUser?._id,
       bookId: selectedFine.bookId!,
       amount: selectedFine.fine,
       paymentMethod: data.paymentMethod,
@@ -105,7 +104,7 @@ function BorrowedBooksList() {
       {borrowedDetails.length!==0 ? borrowedDetails.map((borrowObj) => {
         const bookDetails = books.find((bookObj) => borrowObj.bookId === bookObj._id);
         if (!bookDetails) return null;
-        let due_date = new Date(borrowObj.dueDate).toLocaleDateString();
+        const due_date = new Date(borrowObj.dueDate).toLocaleDateString();
         return (
           <div
             key={borrowObj.bookId}

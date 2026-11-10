@@ -1,6 +1,6 @@
 import { Modal, ModalBody, ModalHeader } from 'react-bootstrap';
 import {useForm} from 'react-hook-form'
-import { fetchBooks } from '../../store/BooksContext';
+import { useBooks } from '../../store/BooksContext';
 import type { BookType } from '../../types/BookType';
 import { useEffect } from 'react';
 
@@ -13,7 +13,7 @@ type PropsType={
 function BookEdit({ showEditModal, onHideEditModal,bookId }:PropsType) { 
 
     // To get the update function
-    const {books,updateBook}=fetchBooks()
+    const {books,updateBook}=useBooks()
 
     // Find the book data based on the bookId prop
     const bookData=books.find(bookObj=>bookObj._id===bookId)

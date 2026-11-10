@@ -3,7 +3,7 @@ import type { APIResponseType } from "../../types/APIResponseType"
 export const getTransactionData=async():Promise<{status:number,data:APIResponseType}>=>{
     try{
         // make client request
-        let res=await fetch(`${import.meta.env.VITE_API_URL}/transaction-api/read-transaction`,{
+        const res=await fetch(`${import.meta.env.VITE_API_URL}/transaction-api/read-transaction`,{
             method:"GET",
             credentials:"include"
         })
@@ -11,7 +11,7 @@ export const getTransactionData=async():Promise<{status:number,data:APIResponseT
         // parse response json object
         const data:APIResponseType=await res.json()
         return {status:res.status,data}
-    }catch(err){
+    }catch {
         return {status:500,data:{message:"Internal Server Error"}}
     }
 }

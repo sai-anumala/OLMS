@@ -14,7 +14,7 @@ export const addBook=async(bookData:BookType)=>{
         // parse data
         const data:APIResponseType=await res.json()
         return {status:res.status,data}
-    }catch(err){
+    }catch {
         return {status:500,data:{message:"internal server error"}}
     }
 }

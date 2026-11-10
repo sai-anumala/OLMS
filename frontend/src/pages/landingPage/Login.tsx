@@ -21,7 +21,7 @@ function Login() {
   const onFormSubmit: SubmitHandler<LoginType>=async(data)=>{
     try {
        userLogin(data);
-    } catch (err) {
+    } catch {
       toast.error("Server Error");
     }
   };

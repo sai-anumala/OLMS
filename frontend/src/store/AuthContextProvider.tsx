@@ -1,14 +1,14 @@
 // import React from 'react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { AuthContextType, LoginType } from '../types/AuthContextType';
-import type {  BorrowedBookType, ReturnBookType, UserType } from '../types/UserType';
+import type { UserType } from '../types/UserType';
 import { loginUser } from '../services/user/Login';
 import { addToCart, removeFromCart } from '../services/user/CartApi';
 import { borrowBook } from '../services/user/BorrowBook';
-import { fetchBooks } from './BooksContext';
+import { useBooks } from './BooksContext';
 import toast from 'react-hot-toast';
 import { returnBookApi } from '../services/user/ReturnBook';
-import { updateUserDetails } from '../services/common/UpdateUser';
+import { updateProfile } from '../services/common/UpdateUser';
 import { cartBorrowBooks } from '../services/user/BorrowCartBooks';
 // import type { PaymentFormType } from '../types/FineType';
 import { payFineAPi } from '../services/user/PayFine';
@@ -27,7 +27,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
   const [loginStatus,setLoginStatus]=useState<boolean>(false)
   const [pageLoading,setPageLoading]=useState<boolean>(true)
 
-  const {fetchingBooks}=fetchBooks()
+  const {fetchingBooks}=useBooks()
   
 // ------------------------------- Login -------------------------------
   const userLogin=async(userData:LoginType):Promise<void>=>{
@@ -69,7 +69,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
   //--------------------------- Add Book To Cart-------------------------
   const bookAddToCart=async(bookId:string):Promise<void>=>{
     // pass book details to it
-    let resObj=await addToCart(bookId)
+    const resObj=await addToCart(bookId)
     if(resObj.status===200) {
       setCurrentUser(prev=>prev && {...prev,cart:[...prev.cart,bookId]})
       // return resObj.data.message
@@ -84,7 +84,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
   //--------------------------Remove Book Fromn Cart----------------------
   const bookRemoveFromCart=async(bookId:string):Promise<void>=>{
     // pass book details to it
-    let resObj=await removeFromCart(bookId)
+    const resObj=await removeFromCart(bookId)
 
     // check status
     if(resObj.status===200){
@@ -100,10 +100,10 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
 // ----------------------------- Borrow Book ----------------------------
   const bookBorrow=async(bookId:string):Promise<void>=>{
-    let resObj=await borrowBook(bookId)
+    const resObj=await borrowBook(bookId)
     if(resObj.status===200){
-      // setCurrentUser(prev=>prev && {...prev,borrowed_books:[...(prev.borrowed_books || []),...(resObj.data.payload as BorrowedBookType[])]})
-      setCurrentUser(prev=>prev && {...prev,borrowed_books:(resObj.data.payload as BorrowedBookType[])})
+      // server sends back the updated user (borrowed books, cart and fines)
+      setCurrentUser(resObj.data.payload as UserType)
       // call books api
       fetchingBooks()
       toast.success(resObj.data.message)
@@ -115,10 +115,10 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
 // ----------------------------- Return Book ---------------------------
   const returnBook=async(bookId:string):Promise<void>=>{
-    let resObj=await returnBookApi(bookId)
+    const resObj=await returnBookApi(bookId)
     // check status
     if(resObj.status===200){
-      setCurrentUser(prev=>prev && {...prev,borrowed_books:prev.borrowed_books?.filter(obj=>obj.bookId!==bookId),return_books:(resObj.data.payload as ReturnBookType[])}) // updating local use stsate of borroweed books and retunred books
+      setCurrentUser(resObj.data.payload as UserType) // updated borrowed + returned books from the server
       toast.success(resObj.data.message) 
       fetchingBooks() // to maintain books count consistant across the components
     }
@@ -129,7 +129,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
   // function to update the user data
   const updateUser=async (userData:UserType):Promise<void>=>{
-     let resObj=await updateUserDetails(userData)
+     const resObj=await updateProfile(userData)
      if(resObj.status===200){
       toast.success(resObj.data.message)
       setCurrentUser(prev=>prev && {...prev,...resObj.data.payload})
@@ -144,7 +144,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
   const refreshPage=async():Promise<void>=>{
     try{
           // make client request
-        let res=await fetch(`${import.meta.env.VITE_API_URL}/refresh`,{
+        const res=await fetch(`${import.meta.env.VITE_API_URL}/refresh`,{
           method:"GET",
           credentials:"include"
           })
@@ -156,11 +156,13 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
           setLoginStatus(true)
         }
         else{
-          toast.error("page not refreshed")
+          // 401 just means the visitor isn't logged in; 403 means the account is on hold
+          if(res.status===403) toast.error(resObj.message)
+          setCurrentUser(null)
           setLoginStatus(false)
         } 
-    }catch(err){
-      toast.error("Session expired. Please login again.");
+    }catch{
+      toast.error("Could not reach the server. Please try again later.");
       setLoginStatus(false);
     }
     finally{
@@ -170,30 +172,30 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
 // ----------------------user logout---------------------
   const userLogout=async():Promise<void>=> {
-    // make req
-    let res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/user-logout`,{
-      method:"GET",
-      credentials:"include"
-    })
-    let resObj=await res.json()
-    // check res
-    if(res.status!==200){
-       toast.error("logout failed try again")
-    }
-   else{
+    try{
+      const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/user-logout`,{
+        method:"GET",
+        credentials:"include"
+      })
+      const resObj=await res.json()
+      if(res.status!==200){
+        toast.error("logout failed try again")
+        return
+      }
       toast.success(resObj.message)
-    setCurrentUser(null);
-    setLoginStatus(false)
+      setCurrentUser(null);
+      setLoginStatus(false)
+    }catch{
+      toast.error("logout failed try again")
     }
   }
 
   // ------------------Cart Books Borrow--------------
   const cartBooksBorrow=async(books:string[])=>{
-        let resObj=await cartBorrowBooks(books)
+        const resObj=await cartBorrowBooks(books)
         if(resObj.status===200){
-            setCurrentUser(prevUser=>prevUser && ({
-              ...prevUser,
-              borrowed_books:[...prevUser?.borrowed_books || [], ...(resObj.data.payload as BorrowedBookType[])]}))
+            // server returns the full updated user (borrowed books added, cart emptied)
+            setCurrentUser(resObj.data.payload as UserType)
             toast.success(resObj.data.message)
             fetchingBooks()
         }
@@ -204,9 +206,15 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
   //  ---------------PAY Fine Book---------------------
   const payFine=async(fineDetails:PaymentFormType)=>{
-    let resObj=await payFineAPi(fineDetails)
+    let resObj
+    try{
+      resObj=await payFineAPi(fineDetails)
+    }catch{
+      toast.error("Payment failed, please try again")
+      return
+    }
     if(resObj.status===200){
-      setCurrentUser(prevUser=>prevUser && {...prevUser,borrowed_books:(resObj.data.payload as UserType).borrowed_books,return_books:(resObj.data.payload as UserType).return_books})
+      setCurrentUser(resObj.data.payload as UserType)
       toast.success(resObj.data.message)
       fetchingBooks()
     }
@@ -248,6 +256,8 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     cartBooksBorrow,
     payFine,
     pageLoading
+  // the handlers only use state setters, so re-creating the value when state changes is enough
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [currentUser, isLoading, loginError, loginStatus, pageLoading]);
 
   return (

@@ -1,22 +1,21 @@
-import {Router} from "express"
+import { Router } from "express"
 import expressAsyncHandler from "express-async-handler";
 import { addNewBook, bookStatusUpate, deleteBook, readAllBooks, updateBook } from "../controllers/BookControllers";
-import { verifyToken } from "../middlewares/verifyToken";
+import { isAdmin, verifyToken } from "../middlewares/verifyToken";
 
-// create router
-export const BookRoute=Router();
+export const BookRoute = Router();
 
-// read all the books 
-BookRoute.get("/books",expressAsyncHandler(readAllBooks))
+// read all the books (public)
+BookRoute.get("/books", expressAsyncHandler(readAllBooks))
 
-// add new book
-BookRoute.post("/book",verifyToken,expressAsyncHandler(addNewBook))
+// admin only: add new book
+BookRoute.post("/book", verifyToken, isAdmin, expressAsyncHandler(addNewBook))
 
-// update book details
-BookRoute.put("/update-book",verifyToken,expressAsyncHandler(updateBook))
+// admin only: update book details
+BookRoute.put("/update-book", verifyToken, isAdmin, expressAsyncHandler(updateBook))
 
-// delete book 
-BookRoute.put("/update-book-status",verifyToken,expressAsyncHandler(bookStatusUpate))
+// admin only: toggle active / inactive
+BookRoute.put("/update-book-status", verifyToken, isAdmin, expressAsyncHandler(bookStatusUpate))
 
-// delete book 
-BookRoute.put("/delete-book",verifyToken,expressAsyncHandler(deleteBook))
+// admin only: remove / restore book (soft delete)
+BookRoute.put("/delete-book", verifyToken, isAdmin, expressAsyncHandler(deleteBook))

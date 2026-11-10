@@ -31,6 +31,7 @@ export type UserType = {
   email: string;
   password?: string; //optional --> (for registration:required (or) for api response:not required)
   role: string;
+  status?: boolean; // false = account on hold
   cart: string[] ; // BookType[] for api response (if populated)
   fine?: number;
   borrowed_books?: BorrowedBookType[];
@@ -43,5 +44,6 @@ export type UsersContextType = {
   users: UserType[];
   updateUserInfo:( userData:UserType)=>void;
   deleteUser:(userId:string)=>void;
+  holdUser:(userId:string)=>void;
   // cartBooksBorrow:(books:string[])=>void
 };

@@ -3,9 +3,9 @@ import type { APIResponseType } from "../../types/APIResponseType";
 
 export function RegisterApi(){
 
+    // network errors are thrown and handled by the Register page
     async function registerApi(userData:UserType) {
-       try{
-        let res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/user`,{
+      const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/user`,{
         method:"POST",
         credentials:"include",
         headers:{"Content-Type":"application/json"},
@@ -13,9 +13,6 @@ export function RegisterApi(){
       })
       const data:APIResponseType=await res.json()
       return {status:res.status,data};
-      }catch(err){
-          throw err
-        }
-      }
-      return {registerApi}
+    }
+    return {registerApi}
 }

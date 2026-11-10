@@ -1,13 +1,12 @@
-import {Router} from "express"
+import { Router } from "express"
 import expressAsyncHandler from "express-async-handler";
 import { createTransaction, readTransactionsData } from "../controllers/TransactionController";
-import { verifyToken } from "../middlewares/verifyToken";
+import { isAdmin, verifyToken } from "../middlewares/verifyToken";
 
+export const TransactionRoute = Router();
 
-export const TransactionRoute=Router();
- 
-//create transaction
-TransactionRoute.post("/transaction",verifyToken,expressAsyncHandler(createTransaction))
+// pay a fine (logged-in user)
+TransactionRoute.post("/transaction", verifyToken, expressAsyncHandler(createTransaction))
 
-//Read transactions
-TransactionRoute.get("/read-transaction",verifyToken,expressAsyncHandler(readTransactionsData))
+// read all transactions (admin only)
+TransactionRoute.get("/read-transaction", verifyToken, isAdmin, expressAsyncHandler(readTransactionsData))

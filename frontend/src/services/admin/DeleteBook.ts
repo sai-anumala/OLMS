@@ -13,7 +13,7 @@ export const deleteBookInfo=async(bookId:string)=>{
         // parse data
         const data:APIResponseType=await res.json()
         return {status:res.status,data}
-    }catch(err){
+    }catch {
         return {status:500,data:{message:"Internal Server Error"}}
     }
 }

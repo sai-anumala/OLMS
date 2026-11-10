@@ -21,7 +21,7 @@ export default async function chatbot(input: string){
       };
 
       return {status: res.status, message: botMessage}
-    } catch (error) {
+    } catch {
       return {status: 500, message: {text: "Error: Failed to get response", sender: "bot"}};
     }
 }

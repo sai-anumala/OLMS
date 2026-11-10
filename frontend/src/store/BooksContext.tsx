@@ -54,7 +54,7 @@ function BooksProvider(props:ContextPropsType) {
 // ------------------------DELETE BOOK-------------------------------
     async function deleteBook(bookId:string){
         
-        let resObj=await deleteBookInfo(bookId) // make api function call
+        const resObj=await deleteBookInfo(bookId) // make api function call
         // checking status for 200 or 204(no content)
         if(resObj.status===200){
           setBooks(prevBooks=>prevBooks && prevBooks.map(book=>book._id===bookId ? {...book,isDelete:!book.isDelete} : book))
@@ -68,7 +68,7 @@ function BooksProvider(props:ContextPropsType) {
 // ------------------------UPDATE BOOK---------------------------------
     async function updateBook( modifiedBookData: BookType) {
         // make api req
-        let resObj=await updateBookDetails(modifiedBookData)
+        const resObj=await updateBookDetails(modifiedBookData)
         // check status
         if(resObj.status===200){
             setBooks(prev=>prev.map(book=>book._id===modifiedBookData._id ? {...book,...modifiedBookData}:book))
@@ -81,7 +81,7 @@ function BooksProvider(props:ContextPropsType) {
 
 // ---------------------- UPDATE BOOK STATUS---------------------------
     async function updateBookStatus(bookId:string){
-       let resObj=await updateBookStatusInfo(bookId) // make api function call
+       const resObj=await updateBookStatusInfo(bookId) // make api function call
 
         // checking status for 200
         if(resObj.status===200 ){
@@ -161,7 +161,7 @@ function BooksProvider(props:ContextPropsType) {
 }
 
 // custom hook to reduce rewriting the useContext
-export const fetchBooks=()=>{
+export const useBooks=()=>{
     const context=useContext(booksContextObj);
 
     if (!context) { throw new Error("useBooks must be used within a BooksProvider") }

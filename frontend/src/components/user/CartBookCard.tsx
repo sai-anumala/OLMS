@@ -9,7 +9,7 @@ import type { BookType } from "../../types/BookType";
 type BookCardProps = {
     bookObj: BookType;
     onViewDetails: (book: BookType) => void;
-    userCart:Boolean;
+    userCart:boolean;
 };
 
 export const BookCard=({bookObj,onViewDetails,userCart}:BookCardProps) => {
@@ -50,7 +50,7 @@ export const BookCard=({bookObj,onViewDetails,userCart}:BookCardProps) => {
                             {bookObj.genre}
                         </span>
                     </p>
-                    <span className="text-start text-secondary">{bookObj.availability} out of 20</span>
+                    <span className="text-start text-secondary">{bookObj.availability} out of {bookObj.copies ?? bookObj.availability}</span>
 
                     <div className="mt-1" style={{ display:"flex", justifyContent:"space-between" }}>
                         <span>

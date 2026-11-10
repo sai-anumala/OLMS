@@ -5,7 +5,7 @@ import type { APIResponseType } from "../../types/APIResponseType";
     export const addToCart=async(bookId:string)=>{
         try{
         // make req
-            let res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/cartAdd`,{
+            const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/cartAdd`,{
                 method:"PUT",
                 credentials:"include",
                 headers:{"Content-Type":"application/json"},
@@ -13,7 +13,7 @@ import type { APIResponseType } from "../../types/APIResponseType";
             })
             const data:APIResponseType=await res.json()
             return {status:res.status,data};
-        }catch(err){
+        }catch {
             return {status:500,data:{message:"Server error"}}
         }
     }
@@ -22,7 +22,7 @@ import type { APIResponseType } from "../../types/APIResponseType";
     export const removeFromCart=async(bookId:string)=>{
         try{
         // make req
-            let res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/cartRemove`,{
+            const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/cartRemove`,{
                 method:"PUT",
                 credentials:"include",
                 headers:{"Content-Type":"application/json"},
@@ -30,7 +30,7 @@ import type { APIResponseType } from "../../types/APIResponseType";
             })
             const data:APIResponseType=await res.json()
             return {status:res.status,data};
-        }catch(err){
+        }catch {
             return {status:500,data:{message:"Server error"}}
         }
     }

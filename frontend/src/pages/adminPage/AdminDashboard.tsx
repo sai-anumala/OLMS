@@ -4,19 +4,19 @@ import { Card, CardBody, Col, Row } from "react-bootstrap"
 import UserGreet from "../../components/user/UserGreet"
 import { IoBookOutline, IoWarningOutline } from "react-icons/io5"
 import { FaRegClock } from "react-icons/fa"
-import { fetchUsers } from "../../store/UserContext"
+import { useUsers } from "../../store/UserContext"
 import { useEffect, useState } from "react"
 import BorrowedBooks from "../../components/admin/BorrowedBooks"
 import { IoIosPeople } from "react-icons/io"
-import { fetchBooks } from "../../store/BooksContext"
+import { useBooks } from "../../store/BooksContext"
 import { ImBooks } from "react-icons/im"
 import { GrMoney } from "react-icons/gr"
 
 function AdminDashboard() {
 
   // users data
-  const{users}=fetchUsers()
-  const {books}=fetchBooks()
+  const{users}=useUsers()
+  const {books}=useBooks()
   //  to calculate total borrow and fines and overdues 
   const [currentlyBorrowedBooks, setCurrentlyBorrowedBooks]=useState<number>(0);
   const [overdueBooks, setOverdueBooks]=useState<number>(0);

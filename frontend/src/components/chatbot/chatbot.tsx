@@ -63,7 +63,7 @@ export default function ChatBot() {
           },
         ]);
       }
-    } catch (error) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {

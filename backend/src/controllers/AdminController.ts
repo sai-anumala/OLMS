@@ -1,73 +1,76 @@
-import { Request, Response } from "express"
-import { UserModel } from "../models/UserModel"
+import { Request, Response } from "express";
+import { UserModel } from "../models/UserModel";
+import { serializeUser } from "../services/CalculateFine";
+import { buildProfileUpdate } from "../services/UserProfile";
+import { isValidId } from "../utils/validate";
 
+// -------------------- Update User (admin) ---------------------
+export const updateUserData = async (req: Request, res: Response) => {
+  const userId = req.body?._id;
+  if (!isValidId(userId)) {
+    res.status(400).json({ message: "Invalid user id" });
+    return;
+  }
+  const target = await UserModel.findById(userId);
+  if (!target) {
+    res.status(404).json({ message: "User Not Found" });
+    return;
+  }
+  // admins can fix contact details, but not passwords, roles or fines
+  const result = await buildProfileUpdate(req.body, userId, { allowPassword: false });
+  if (!result.ok) {
+    res.status(result.status).json({ message: result.message });
+    return;
+  }
+  const user = await UserModel.findByIdAndUpdate(userId, { $set: result.updates }, { new: true, runValidators: true });
+  res.status(200).json({ message: "User Information Updated Successfully", payload: serializeUser(user) });
+};
 
-// -------------------- Update User ---------------------
-export const updateUserData=async(req:Request,res:Response)=>{
-    // get user data
-    let modifiedUserData=req.body
-    if(modifiedUserData){
-        // verify user exists or not
-        let userObj=await UserModel.findById(modifiedUserData._id)
-        // check
-        if(userObj===null){
-            res.status(404).json({message:"User Not Found"})
-        }
-        else{
-            let userDoc=await UserModel.updateOne({_id:modifiedUserData._id},{...modifiedUserData})
-            // check update status and response
-            if(userDoc.modifiedCount===0){
-                res.status(400).json({message:"Error occured while updating user data, try again.."})
-            }
-            else{
-                let user=await UserModel.findById(modifiedUserData._id)
-                res.status(200).json({message:"User Information Updated Successfully",payload:user})
-            }
-        }
-    }
-}
-
-//--------------------- Hold User -----------------------
-export const holdUser=async(req:Request,res:Response)=>{
-    let uid=req.body["userId"] // deleting user id
-    // check user existance
-    let userData=await UserModel.findById(uid)
-    if(userData===null){
-        res.status(404).json({message:"User Not Found"})
-    }
-    else{
-        // perform soft delete
-        let updateStatus=await UserModel.updateOne({_id:uid},{$set:{status:false}})
-        // check status and send response
-        if(updateStatus.modifiedCount===0){
-            res.status(500).json({message:"While blocking user error occcured try again.."})
-        }
-        else{
-            let user=await UserModel.findById(uid)
-            res.status(200).json({message:"User Blocked Successfully...",payload:user})
-        }
-    }
-}
+//--------------------- Hold / Unhold User -----------------------
+export const holdUser = async (req: Request, res: Response) => {
+  const userId = req.body?.userId;
+  if (!isValidId(userId)) {
+    res.status(400).json({ message: "Invalid user id" });
+    return;
+  }
+  if ((req as any).user._id.toString() === userId) {
+    res.status(400).json({ message: "You cannot put your own account on hold" });
+    return;
+  }
+  const target = await UserModel.findById(userId);
+  if (!target) {
+    res.status(404).json({ message: "User Not Found" });
+    return;
+  }
+  const newStatus = target.status === false; // toggle
+  const user = await UserModel.findByIdAndUpdate(userId, { $set: { status: newStatus } }, { new: true });
+  res.status(200).json({
+    message: newStatus ? `${target.username} is active again` : `${target.username} is now on hold`,
+    payload: serializeUser(user),
+  });
+};
 
 //--------------------- Delete User -----------------------
-export const deleteUser=async(req:Request,res:Response)=>{
-    let uid=req.body["userId"] // deleting user id
-    // check user existance
-    let userData=await UserModel.findById(uid)
-    if(userData===null){
-        res.status(404).json({message:"User Not Found"})
-    }
-    else{
-        // perform delete
-        let updateStatus=await UserModel.deleteOne({_id:uid})
-        // check status and send response
-        if(updateStatus.deletedCount===0){
-            res.status(500).json({message:"While deleting user error occcured try again.."})
-        }
-        else{
-            res.status(200).json({message:"User information deleted Successfully...",})
-        }
-    }
-}
-
-// -------------------- Active/Inactive Book-----------------
+export const deleteUser = async (req: Request, res: Response) => {
+  const userId = req.body?.userId;
+  if (!isValidId(userId)) {
+    res.status(400).json({ message: "Invalid user id" });
+    return;
+  }
+  if ((req as any).user._id.toString() === userId) {
+    res.status(400).json({ message: "You cannot delete your own account" });
+    return;
+  }
+  const target = await UserModel.findById(userId);
+  if (!target) {
+    res.status(404).json({ message: "User Not Found" });
+    return;
+  }
+  // deleting a user who still holds books would make those copies disappear from the library
+  if ((target.borrowed_books?.length ?? 0) > 0) {
+    res.status(409).json({ message: `${target.username} still has borrowed books. They must be returned first.` });
+    return;
+  }
+  await UserModel.deleteOne({ _id: userId });
+  res.status(200).json({ message: "User information deleted Successfully..." });
+};

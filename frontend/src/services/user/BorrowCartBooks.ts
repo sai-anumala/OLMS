@@ -4,7 +4,7 @@ import type { APIResponseType } from "../../types/APIResponseType"
 export const cartBorrowBooks=async(books:string[]):Promise<{status:number,data:APIResponseType}>=>{
     try{
         // make client req to server
-        let res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/borrow-cart-books`,{
+        const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/borrow-cart-books`,{
             method:"PUT",
             headers:{"Content-Type":"application/json"},
             credentials:"include",
@@ -15,7 +15,7 @@ export const cartBorrowBooks=async(books:string[]):Promise<{status:number,data:A
         const data:APIResponseType=await res.json()
         return {status:res.status,data}
 
-    }catch(err){
+    }catch {
         return {status:500,data:{message:"Server Error"}}
     }
 }

@@ -12,9 +12,9 @@ function UserDashBoard() {
   const {currentUser}=useAuth()
   // overdue books count
   let overDueCount=0;
-  let today=new Date();
+  const today=new Date();
   (currentUser?.borrowed_books || [])?.map((obj : BorrowedBookType)=>{
-    let due=new Date(obj.dueDate)
+    const due=new Date(obj.dueDate)
     if(due<today){
       overDueCount+=1
     }

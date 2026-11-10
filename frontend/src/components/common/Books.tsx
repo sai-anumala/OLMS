@@ -1,5 +1,5 @@
 import { Button, Card, CardBody, CardImg, Col, Modal, ModalBody, Row } from "react-bootstrap"
-import { fetchBooks } from "../../store/BooksContext"
+import { useBooks } from "../../store/BooksContext"
 import { useState, useMemo } from "react"
 import { LuUser } from "react-icons/lu";
 import { BiArrowFromLeft } from "react-icons/bi";
@@ -15,10 +15,10 @@ import CarouselC from "./CarouselC";
 
 function Books() {
     // to show modal
-    let [showModal,setShowModal]=useState<boolean>(false)
+    const [showModal,setShowModal]=useState<boolean>(false)
     const navigate=useNavigate()
     // from the book context ({books}=useContext hook (contextobj))
-    const {books}=fetchBooks()
+    const {books}=useBooks()
     
     // const {handleAddToCart}=useAddToCart()
     const {currentUser,bookAddToCart,bookBorrow}=useAuth()
@@ -61,7 +61,7 @@ function Books() {
     }
 
     // display view button clicked book on modal
-    let [modalData,setModalData]=useState<BookType>({
+    const [modalData,setModalData]=useState<BookType>({
       title:"",
       author:'',
       image:'',
@@ -99,12 +99,12 @@ function Books() {
                                   <div className="d-flex justify-content-between">
                                     <p className="text-success ">
                                       Available :
-                                    </p><span className="text-start text-secondary">{bookObj.availability} out of 20</span>
+                                    </p><span className="text-start text-secondary">{bookObj.availability} out of {bookObj.copies ?? bookObj.availability}</span>
 
                                   </div>                                
                                     <div className={`mt-1 d-flex ${currentUser? currentUser.role==="admin" ? 'justify-content-center':"justify-content-between" : "justify-content-between"}`}>
                                       <span>
-                                        <button type="button" className="btn btn-dark text-white rounded-2" onClick={()=>{setModalData(bookObj),setShowModal(true)}}>View Details</button>
+                                        <button type="button" className="btn btn-dark text-white rounded-2" onClick={()=>{setModalData(bookObj);setShowModal(true)}}>View Details</button>
                                       </span>
                                       <span className="ms-4">
                                         { currentUser?.role!=="admin" && <button
@@ -167,7 +167,7 @@ function Books() {
                                   
                                 <div className="d-flex">
                                       {modalData.availability===0 ? <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}>Not Available</span>:<span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}> Available</span>}
-                                    <span className="ms-3 text-secondary">{modalData.availability} out of 20</span>
+                                    <span className="ms-3 text-secondary">{modalData.availability} out of {modalData.copies ?? modalData.availability}</span>
                                 </div>
                                   
                                   {/* <br /> */}
@@ -193,7 +193,7 @@ function Books() {
                                     <span>
                                       <b>Available:</b>
                                     </span>
-                                    <p>{modalData.availability} out of 20</p>
+                                    <p>{modalData.availability} out of {modalData.copies ?? modalData.availability}</p>
                                     </Col>
                                   </Row>
                                   <hr />

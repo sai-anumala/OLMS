@@ -1,7 +1,7 @@
 import { Modal, ModalBody, ModalHeader } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 import type { BookType } from "../../types/BookType";
-import { fetchBooks } from "../../store/BooksContext";
+import { useBooks } from "../../store/BooksContext";
 import { useEffect } from "react";
 import { FormInput, FormSelect, FormTextarea } from "../common/FormField";
 import { useCloudinaryUpload } from "../../hooks/useCloudinaryUpload";
@@ -19,7 +19,7 @@ const GENRE_OPTIONS = [
 ];
 
 function AddBook({ show, onHide }: PropsType) {
-  const { addNewBook } = fetchBooks();
+  const { addNewBook } = useBooks();
   const { imageUrl, uploading, error: uploadError, handleImageUpload, clearImage } =
     useCloudinaryUpload();
 
@@ -77,7 +77,7 @@ function AddBook({ show, onHide }: PropsType) {
       reset();
       clearImage();
       onHide();
-    } catch (error) {
+    } catch {
       // Error handling is done in the context
     }
   };

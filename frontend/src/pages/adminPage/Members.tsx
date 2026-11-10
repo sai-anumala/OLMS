@@ -1,6 +1,6 @@
 import  { useEffect, useState } from 'react'
 import { Button, Col, Modal, Row } from 'react-bootstrap'
-import { fetchUsers } from '../../store/UserContext';
+import { useUsers } from '../../store/UserContext';
 import { TiEdit } from 'react-icons/ti';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { AiOutlineClose } from 'react-icons/ai';
@@ -10,9 +10,9 @@ import { MdBlock } from 'react-icons/md';
 
 function Members() {
   //fetching users
-  const {users,updateUserInfo,deleteUser}=fetchUsers();
+  const {users,updateUserInfo,deleteUser,holdUser}=useUsers();
   //to show userModal
-  let [showUserModal,setShowUserModal]=useState<boolean>(false);
+  const [showUserModal,setShowUserModal]=useState<boolean>(false);
   const [selectedUser,setSelectedUser]=useState<UserType>();
 
   //function to open modal
@@ -39,7 +39,19 @@ function Members() {
 
   // handle update data
   async function handleUpdateUserData(updatedData:UserType){
-    updateUserInfo(updatedData)
+    await updateUserInfo(updatedData)
+    handleCloseuser()
+  }
+
+  function handleHold(user:UserType){
+    if(!user._id) return
+    const action=user.status===false ? "re-activate" : "put on hold"
+    if(window.confirm(`Do you want to ${action} ${user.username}?`)) holdUser(user._id)
+  }
+
+  function handleDelete(user:UserType){
+    if(!user._id) return
+    if(window.confirm(`Delete ${user.username} permanently? This cannot be undone.`)) deleteUser(user._id)
   }
 
   return (
@@ -77,6 +89,8 @@ function Members() {
                          <tr key={userobj._id}>
                            <td colSpan={2} className='align-middle'>
                             {userobj.username}
+                            {userobj.role==="admin" && <span className='badge bg-dark ms-2'>admin</span>}
+                            {userobj.status===false && <span className='badge bg-warning text-dark ms-2'>on hold</span>}
                            </td>
                            <td className='align-middle'>{userobj.email}</td>
                            <td className='align-middle'>{userobj.mobile}</td>
@@ -85,8 +99,12 @@ function Members() {
                            <td colSpan={4} className='align-middle'>
                              <div className='d-flex flex-nowrap'>
                                <button className='btn' onClick={()=>updateUser(userobj)}><TiEdit className='fs-5'/></button>
-                               <button className="btn" ><MdBlock className='text-warning fs-5 hold'/></button>
-                                <button className='btn'><RiDeleteBinLine className='fs-5' onClick={()=>{if(userobj._id){deleteUser(userobj._id)}}}/></button>
+                               {userobj.role!=="admin" && <>
+                                 <button className="btn" title={userobj.status===false ? "Re-activate member" : "Put member on hold"} onClick={()=>handleHold(userobj)}>
+                                   <MdBlock className={`fs-5 hold ${userobj.status===false ? 'text-success' : 'text-warning'}`}/>
+                                 </button>
+                                 <button className='btn' title="Delete member" onClick={()=>handleDelete(userobj)}><RiDeleteBinLine className='fs-5'/></button>
+                               </>}
                              </div>
                            </td>
                          </tr>
@@ -98,7 +116,7 @@ function Members() {
        </div>
 
           {/* update user data */}
-        <Modal show={showUserModal} className="ml-3">
+        <Modal show={showUserModal} onHide={handleCloseuser} className="ml-3">
      
           <Modal.Body >
             <div className="d-flex justify-content-between align-items-center mb-3">
