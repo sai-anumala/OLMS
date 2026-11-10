@@ -55,11 +55,13 @@ export const serializeUsers = async (userDocs: any[]) => {
       const paymentId = paymentIdFor(record);
       return { ...record, ...(paymentId && { paymentId }), book: bookSummary(bookById.get(String(record.bookId))) };
     });
-    // cart_books: full book details for the cart page (books removed from the library are skipped)
-    user.cart_books = (user.cart || [])
-      .map((id: any) => bookById.get(String(id)))
-      .filter((book: any) => book && book.isDelete !== true)
-      .map(bookView);
+    // cart: only books that still exist and aren't removed, so the cart page and the navbar count agree
+    // (stale ids stay in the database, so a restored book reappears in the cart)
+    const cartBooks = [...new Set<string>((user.cart || []).map(String))]
+      .map((id) => bookById.get(id))
+      .filter((book: any) => book && book.isDelete !== true);
+    user.cart = cartBooks.map((book: any) => String(book._id));
+    user.cart_books = cartBooks.map(bookView);
 
     const totalFine = user.borrowed_books.reduce((total: number, r: any) => total + r.fine, 0);
     user.fine = totalFine;

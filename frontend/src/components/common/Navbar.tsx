@@ -33,7 +33,7 @@ function Navbar({ handleOpenProfile }: NavbarProps) {
         ? [
             { to: "/user/dashboard", label: "Dashboard", icon: <IoGridOutline /> },
             { to: "/user/my-books", label: "My Books", icon: <IoBookOutline /> },
-            { to: "/user/cart", label: "Cart", icon: <IoCartOutline />, badge: currentUser.cart?.length ?? 0 },
+            { to: "/user/cart", label: "Cart", icon: <IoCartOutline />, badge: currentUser.cart_books?.length ?? 0 }, // same list the Cart page shows
           ]
         : [];
 
