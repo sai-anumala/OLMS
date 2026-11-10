@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import UserGreet from "../components/user/UserGreet";
 import { useAuth } from "../store/AuthContextProvider";
 
-// Mock the entire AuthContextProvider module
-jest.mock("../store/AuthContextProvider");
+// Mock only the useAuth hook (a factory mock avoids loading the real module, which uses Vite-only import.meta)
+jest.mock("../store/AuthContextProvider", () => ({ useAuth: jest.fn() }));
 
 describe("UserGreet Component", () => {
   beforeEach(() => {
@@ -16,8 +16,7 @@ describe("UserGreet Component", () => {
 
     render(<UserGreet />);
 
-    const greetingText = screen.getByText(/Welcome to Your Library Dashboard -TESTUSER/i);
-    expect(greetingText).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 4 })).toHaveTextContent(/Welcome to Your Library Dashboard - TESTUSER/i);
   });
 
   it("should render the admin dashboard greeting when role is admin", () => {

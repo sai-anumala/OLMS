@@ -9,14 +9,14 @@ import { Toaster } from 'react-hot-toast';
 
 createRoot(document.getElementById('root')!).render(
   
-   <UserContext>
-     <BooksContext>
-      <AuthContextProvider>
+   <BooksContext>
+    <AuthContextProvider>
+     {/* UserContext needs the logged-in user, so it goes inside AuthContextProvider */}
+     <UserContext>
         <Toaster position="top-center"  reverseOrder={false}/> 
          <App/>
-        
-      </AuthContextProvider>
-    </BooksContext>
-   </UserContext>
+     </UserContext>
+    </AuthContextProvider>
+   </BooksContext>
   
 )

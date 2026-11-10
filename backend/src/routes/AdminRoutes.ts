@@ -1,16 +1,21 @@
-import {Router} from 'express'
+import { Router } from 'express'
 import expressAsyncHandler from 'express-async-handler'
-import { deleteUser, holdUser, updateUserData } from '../controllers/AdminController'
-// import { verifyToken } from '../middlewares/verifyToken'
+import { dashboard, deleteUser, holdUser, updateUserData } from '../controllers/AdminController'
+import { isAdmin, verifyToken } from '../middlewares/verifyToken'
 
-// create server
-export const AdminRoute=Router()
+export const AdminRoute = Router()
+
+// every admin route requires a logged-in admin
+AdminRoute.use(verifyToken, isAdmin)
+
+// dashboard numbers + currently borrowed books
+AdminRoute.get("/dashboard", expressAsyncHandler(dashboard))
 
 // update user(member) data
-AdminRoute.put("/update-user",expressAsyncHandler(updateUserData))
+AdminRoute.put("/update-user", expressAsyncHandler(updateUserData))
 
-// hold user 
-AdminRoute.put("/hold-user",expressAsyncHandler(holdUser))
+// hold / unhold user
+AdminRoute.put("/hold-user", expressAsyncHandler(holdUser))
 
 // delete user
-AdminRoute.put("/delete-user",expressAsyncHandler(deleteUser))
+AdminRoute.put("/delete-user", expressAsyncHandler(deleteUser))

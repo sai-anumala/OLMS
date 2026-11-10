@@ -1,152 +1,111 @@
-import  { useEffect, useState } from 'react'
-import { Button, Col, Modal, Row } from 'react-bootstrap'
-import { fetchUsers } from '../../store/UserContext';
-import { TiEdit } from 'react-icons/ti';
-import { RiDeleteBinLine } from 'react-icons/ri';
-import { AiOutlineClose } from 'react-icons/ai';
-import { useForm } from 'react-hook-form';
-import type { UserType } from '../../types/UserType';
-import { MdBlock } from 'react-icons/md';
+import { useEffect, useState } from "react";
+import { Modal } from "react-bootstrap";
+import { useForm } from "react-hook-form";
+import { TiEdit } from "react-icons/ti";
+import { RiDeleteBinLine } from "react-icons/ri";
+import { MdBlock } from "react-icons/md";
+import { useUsers } from "../../store/UserContext";
+import type { UserType } from "../../types/UserType";
+import { PageHeader } from "../../components/common/ui";
 
 function Members() {
-  //fetching users
-  const {users,updateUserInfo,deleteUser}=fetchUsers();
-  //to show userModal
-  let [showUserModal,setShowUserModal]=useState<boolean>(false);
-  const [selectedUser,setSelectedUser]=useState<UserType>();
+  const { users, updateUserInfo, deleteUser, holdUser } = useUsers();
+  const [editing, setEditing] = useState<UserType | null>(null);
+  const { register, formState: { errors }, handleSubmit, reset } = useForm<UserType>();
 
-  //function to open modal
-  function handleOpenUser(){
-        setShowUserModal(true)
-  }
-  function handleCloseuser(){
-      setShowUserModal(false)
-  }
+  useEffect(() => {
+    if (editing) reset(editing);
+  }, [editing, reset]);
 
-  function updateUser(userData:UserType){
-    handleOpenUser();
-    setSelectedUser(userData)
-  }
+  const save = async (data: UserType) => {
+    await updateUserInfo(data);
+    setEditing(null);
+  };
 
-  // form
-  const {register,formState:{errors},handleSubmit,reset}=useForm<UserType>({
-    defaultValues:selectedUser
-  })
+  const toggleHold = (user: UserType) => {
+    const action = user.status === false ? "re-activate" : "put on hold";
+    if (user._id && window.confirm(`Do you want to ${action} ${user.username}?`)) holdUser(user._id);
+  };
 
-  useEffect(()=>{
-         if(selectedUser){ reset(selectedUser)}
-      },[selectedUser,reset])
-
-  // handle update data
-  async function handleUpdateUserData(updatedData:UserType){
-    updateUserInfo(updatedData)
-  }
+  const remove = (user: UserType) => {
+    if (user._id && window.confirm(`Delete ${user.username} permanently? This cannot be undone.`)) deleteUser(user._id);
+  };
 
   return (
-    <div>
-      <div className="border py-3 rounded-2 mt-3 m-3 w-75 mx-auto">
-        <Row>
-          <Col className='mx-4'>
-          <h2 className='text-start'>Members Management</h2>
-          <p className='text-muted text-start'>Manage your library's Members</p>
-          </Col>
-          <Col className='mt-4 text-end px-5'>
-          {/* <button className="btn btn-dark text-white">+Add Members</button> */}
-          </Col>
-        </Row>
-      </div>
-       <div className='border py-2 mt-4 w-75 mx-auto p-2'>
-          <div className="table-responsive">
-          <table className="table align-middle">
-             <caption className='caption-top text-start fs-6 px-3'>Members <span className='border rounded-5 py-1 px-2 bg-dark text-white'>{users.length}</span></caption>
-             <thead className='align-items-center'>
-                     <tr>
-                       <th colSpan={2}>Member</th>
-                       <th >Email</th>
-                       <th>Mobile</th>
-                       
-                       {/* <th colSpan={3}>Join Date</th> */}
-                       <th>Books Borrowed</th>
-                       <th>Outstanding Fines</th>
-                       <th colSpan={4}>Actions</th>
-                     </tr>
-                   </thead>
-                   <tbody>
-                     {
-                       users.map((userobj)=>(
-                         <tr key={userobj._id}>
-                           <td colSpan={2} className='align-middle'>
-                            {userobj.username}
-                           </td>
-                           <td className='align-middle'>{userobj.email}</td>
-                           <td className='align-middle'>{userobj.mobile}</td>
-                           <td  className='align-middle'>{userobj.borrowed_books?.length}</td>
-                           <td  className='align-middle'><span className=' bg-danger text-white rounded-5 px-2 '>{userobj.fine}</span></td>
-                           <td colSpan={4} className='align-middle'>
-                             <div className='d-flex flex-nowrap'>
-                               <button className='btn' onClick={()=>updateUser(userobj)}><TiEdit className='fs-5'/></button>
-                               <button className="btn" ><MdBlock className='text-warning fs-5 hold'/></button>
-                                <button className='btn'><RiDeleteBinLine className='fs-5' onClick={()=>{if(userobj._id){deleteUser(userobj._id)}}}/></button>
-                             </div>
-                           </td>
-                         </tr>
-                       ))
-                     }
-                   </tbody>
+    <div className="container">
+      <PageHeader title="Members Management" subtitle="Manage your library's members" />
+      <div className="border rounded-2 p-2 mb-4">
+        <div className="table-responsive">
+          <table className="table align-middle text-start mb-0">
+            <caption className="caption-top px-2">Members <span className="badge rounded-pill bg-dark">{users.length}</span></caption>
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th className="d-none d-md-table-cell">Email</th>
+                <th className="d-none d-lg-table-cell">Mobile</th>
+                <th className="d-none d-sm-table-cell">Borrowed</th>
+                <th>Fines</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user._id}>
+                  <td className="text-break">
+                    {user.username}
+                    {user.role === "admin" && <span className="badge bg-dark ms-2">admin</span>}
+                    {user.status === false && <span className="badge bg-warning text-dark ms-2">on hold</span>}
+                    <div className="d-md-none small text-muted text-break">{user.email}</div>
+                  </td>
+                  <td className="d-none d-md-table-cell text-break">{user.email}</td>
+                  <td className="d-none d-lg-table-cell">{user.mobile}</td>
+                  <td className="d-none d-sm-table-cell">{user.summary?.borrowedCount ?? 0}</td>
+                  <td><span className="badge rounded-pill bg-danger">₹{user.summary?.totalFine ?? 0}</span></td>
+                  <td>
+                    <div className="d-flex flex-nowrap">
+                      <button className="btn btn-sm" title="Edit member" onClick={() => setEditing(user)}><TiEdit className="fs-5" /></button>
+                      {user.role !== "admin" && (
+                        <>
+                          <button className="btn btn-sm" title={user.status === false ? "Re-activate member" : "Put member on hold"} onClick={() => toggleHold(user)}>
+                            <MdBlock className={`fs-5 ${user.status === false ? "text-success" : "text-warning"}`} />
+                          </button>
+                          <button className="btn btn-sm" title="Delete member" onClick={() => remove(user)}><RiDeleteBinLine className="fs-5" /></button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
-          </div>
-       </div>
+        </div>
+      </div>
 
-          {/* update user data */}
-        <Modal show={showUserModal} className="ml-3">
-     
-          <Modal.Body >
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h4>User Details</h4>
-              <Button variant="outline-secondary" size="sm" onClick={handleCloseuser}>
-                <AiOutlineClose />
-              </Button>
-            </div>
-            {/* form to update */}
-            <form className='form' onSubmit={handleSubmit(handleUpdateUserData)}>
-                <div className="mb-3">
-              <input type="text" placeholder="Enter Username" className={`form-control ${errors.username ? 'is-invalid' : ''}`}
-                {...register('username', { required: 'Username is required' })}/>
-            </div>
-
-            {/* mobile number */}
-            <div className="col mb-3">
-              <input
-                type="tel"
-                placeholder="Mobile Number"
-                className={`form-control ${errors.mobile ? 'is-invalid' : ''}`}
-                {...register('mobile', {
-                  required: 'Mobile number is required',
-                  pattern: {
-                    value: /^[6-9]\d{9}$/,
-                    message: 'Enter a valid 10-digit mobile number'
-                  }
-                })}
-              />
-            </div>
-            
+      <Modal show={editing !== null} onHide={() => setEditing(null)} centered>
+        <Modal.Header closeButton><Modal.Title as="h4">Member Details</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmit(save)} noValidate>
             <div className="mb-3">
-              <input type="email" placeholder="Email"
-                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: 'Invalid email format'
-                  }
-                })}/>
+              <input type="text" placeholder="Username" className={`form-control ${errors.username ? "is-invalid" : ""}`}
+                {...register("username", { required: "Username is required" })} />
+              <div className="invalid-feedback">{errors.username?.message}</div>
             </div>
-            <button type="submit" className="btn btn-dark text-white w-100" >Update</button>
-            </form>
-          </Modal.Body>
-       </Modal>  
+            <div className="mb-3">
+              <input type="tel" placeholder="Mobile Number" className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
+                {...register("mobile", { required: "Mobile number is required", pattern: { value: /^[6-9]\d{9}$/, message: "Enter a valid 10-digit mobile number" } })} />
+              <div className="invalid-feedback">{errors.mobile?.message}</div>
+            </div>
+            <div className="mb-3">
+              <input type="email" placeholder="Email" className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                {...register("email", { required: "Email is required", pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email format" } })} />
+              <div className="invalid-feedback">{errors.email?.message}</div>
+            </div>
+            <button type="submit" className="btn btn-dark w-100">Update</button>
+          </form>
+        </Modal.Body>
+      </Modal>
     </div>
-  )
+  );
 }
 
-export default Members
+export default Members;

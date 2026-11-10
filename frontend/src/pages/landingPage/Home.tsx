@@ -1,7 +1,6 @@
 import { useState } from "react";
 import ChatBot from "../../components/chatbot/chatbot";
 import Books from "../../components/common/Books";
-// import CarouselC from "../../components/common/CarouselC"
 
 function Home() {
   const [showChat, setShowChat] = useState(false);
@@ -33,7 +32,7 @@ function Home() {
         💬
       </button>
       {showChat && (
-        <div style={{ position: "fixed", bottom: 90, right: 20, zIndex: 1000 }}>
+        <div style={{ position: "fixed", bottom: 90, right: 16, zIndex: 1000 }}>
           <ChatBot />
         </div>
       )}

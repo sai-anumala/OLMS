@@ -1,206 +1,203 @@
 import { Request, Response } from "express";
 import { BookModel } from "../models/BookModel";
+import { asString, escapeRegex, isValidId, pickFields } from "../utils/validate";
+import { bookView } from "../services/BookView";
 
-//-----------------------READ ALL BOOKS------------------
-export const readAllBooks = async (req: Request, res: Response) => {
-  //read all books
-  let booksList = await BookModel.find();
-  // check books
-  if (booksList.length === 0) {
-    // no books in library
-    res.status(404).json({ message: "No Books found in the library.." });
-  } else {
-    //response back with books data
-    res.status(200).json({ message: "Books", payload: booksList });
+// fields an admin may set on a book (never _id or isDelete)
+const BOOK_FIELDS = [
+  "title", "genre", "author", "description", "copies", "availability",
+  "isbn", "image", "pages", "published", "rating", "status",
+] as const;
+
+// returns an error message, or null when the numbers make sense
+const checkBookNumbers = (book: Record<string, any>): string | null => {
+  for (const key of ["copies", "availability", "pages"]) {
+    if (book[key] !== undefined && (!Number.isFinite(Number(book[key])) || Number(book[key]) < 0)) {
+      return `${key} must be a positive number`;
+    }
   }
+  if (book["rating"] !== undefined && (Number(book["rating"]) < 0 || Number(book["rating"]) > 5)) {
+    return "rating must be between 0 and 5";
+  }
+  if (book["copies"] !== undefined && book["availability"] !== undefined && Number(book["availability"]) > Number(book["copies"])) {
+    return "availability cannot be more than copies";
+  }
+  return null;
+};
+
+const MAX_SEARCH_LENGTH = 100;
+
+// Public catalog without removed books; ?search= matches title, author or genre
+export const readAllBooks = async (req: Request, res: Response) => {
+  const search = asString(req.query["search"]).trim().slice(0, MAX_SEARCH_LENGTH);
+  const filter: Record<string, unknown> = { isDelete: { $ne: true } };
+  if (search) {
+    const pattern = { $regex: escapeRegex(search), $options: "i" };
+    filter["$or"] = [{ title: pattern }, { author: pattern }, { genre: pattern }];
+  }
+  const booksList = await BookModel.find(filter);
+  res.status(200).json({ message: "Books", payload: booksList.map(bookView) });
+};
+
+// Admin book list, including removed books so they can be restored
+export const readManagedBooks = async (req: Request, res: Response) => {
+  const booksList = await BookModel.find();
+  res.status(200).json({ message: "Books", payload: booksList.map(bookView) });
 };
 
 // ------------------ Add Book---------------------------
 export const addNewBook = async (req: Request, res: Response) => {
-  // get book details
-  let newBook = req.body;
-  // check book existsed or not
-  let bookObj = await BookModel.findOne({ isbn: newBook.isbn });
-  if (bookObj !== null) {
-    // send response book existed
+  const newBook = pickFields(req.body, BOOK_FIELDS);
+  // a brand new book starts with every copy available
+  if (newBook["availability"] === undefined) newBook["availability"] = newBook["copies"];
+
+  const problem = checkBookNumbers(newBook);
+  if (problem) {
+    res.status(400).json({ message: problem });
+    return;
+  }
+  const isbn = asString(newBook["isbn"]).trim();
+  if (!isbn) {
+    res.status(400).json({ message: "ISBN is required" });
+    return;
+  }
+  if (await BookModel.findOne({ isbn })) {
     res.status(409).json({ message: "Book already exists in the library" });
-  } else {
-    let bookDoc = new BookModel(newBook);
-    // save
-    let resObj = await bookDoc.save();
-    // send response back
-    res
-      .status(201)
-      .json({
-        message: "Book Successfully Added To The Library",
-        payload: resObj,
-      });
+    return;
   }
+  const resObj = await BookModel.create({ ...newBook, isbn });
+  res.status(201).json({ message: "Book Successfully Added To The Library", payload: bookView(resObj) });
 };
 
-// update book details
+// ------------------ Update Book -----------------------
 export const updateBook = async (req: Request, res: Response) => {
-  //get book data from rweq
-  const bookdata = req.body;
-  //find book from collection
-  const book = await BookModel.findById({ _id: bookdata._id });
-  // check book availabile or not
-  if (book === null) {
-    // if not send response as not found
-    res.status(404).json({ message: "Book not found" });
-  } else {
-    // else update the book details
-    const bookObj = await BookModel.updateOne(
-      { _id: bookdata._id },
-      { $set: { ...bookdata } },
-    );
-    // check update status
-    if (bookObj.modifiedCount !== 0) {
-      res.status(200).json({ message: "Book details are updated" }); //send response as updated
-    } else {
-      res.status(400).json({ message: "Book details are not updated" }); //send response as not updated
-    }
+  const bookId = req.body?._id;
+  if (!isValidId(bookId)) {
+    res.status(400).json({ message: "Invalid book id" });
+    return;
   }
+  const book = await BookModel.findById(bookId);
+  if (!book) {
+    res.status(404).json({ message: "Book not found" });
+    return;
+  }
+  const updates = pickFields(req.body, BOOK_FIELDS);
+  const problem = checkBookNumbers({ copies: book.copies, availability: book.availability, ...updates });
+  if (problem) {
+    res.status(400).json({ message: problem });
+    return;
+  }
+  if (updates["isbn"] !== undefined) {
+    const isbn = asString(updates["isbn"]).trim();
+    if (!isbn || (await BookModel.findOne({ isbn, _id: { $ne: bookId } }))) {
+      res.status(409).json({ message: "Another book already uses this ISBN" });
+      return;
+    }
+    updates["isbn"] = isbn;
+  }
+  await BookModel.updateOne({ _id: bookId }, { $set: updates }, { runValidators: true });
+  res.status(200).json({ message: "Book details are updated" });
 };
 
-// delete book (soft delete)
+// ---------------- Remove / Restore Book (soft delete toggle) -----------
 export const deleteBook = async (req: Request, res: Response) => {
-  // get id from the url params
-  let bookId = req.body["bookId"];
-
-  let bookObj = await BookModel.findById(bookId);
-  if (bookObj === null) {
-    res.status(404).json({ message: "Book not found" });
-  } else {
-    if (bookObj.isDelete === true) {
-      // perform soft delete operation
-      let deletedBookStatus = await BookModel.updateOne(
-        { _id: bookId },
-        { $set: { isDelete: false } },
-      );
-      // check delete status
-      if (deletedBookStatus.modifiedCount === 0) {
-        // send response
-        res
-          .status(409)
-          .json({ message: "Book Not Removed From LIbrary,Try Again.." });
-      } else {
-        // error occured while deleting
-        res
-          .status(200)
-          .json({ message: `${bookObj.title} Book Restored To The Library` }); //book not found with id
-      }
-    } else {
-      // perform soft delete operation
-      let deletedBookStatus = await BookModel.updateOne(
-        { _id: bookId },
-        { $set: { isDelete: true } },
-      );
-      // check delete status
-      if (deletedBookStatus.modifiedCount === 0) {
-        // send response
-        res
-          .status(500)
-          .json({ message: "While Restoring Book Error occured,try again..." });
-      } else {
-        // error occured while deleting
-        res
-          .status(200)
-          .json({ message: `${bookObj.title} Book Removed From The Library` }); //book not found with id
-      }
-    }
+  const bookId = req.body?.bookId;
+  if (!isValidId(bookId)) {
+    res.status(400).json({ message: "Invalid book id" });
+    return;
   }
+  const bookObj = await BookModel.findById(bookId);
+  if (!bookObj) {
+    res.status(404).json({ message: "Book not found" });
+    return;
+  }
+  const removing = bookObj.isDelete !== true;
+  await BookModel.updateOne({ _id: bookId }, { $set: { isDelete: removing } });
+  res.status(200).json({
+    message: removing ? `${bookObj.title} Book Removed From The Library` : `${bookObj.title} Book Restored To The Library`,
+  });
 };
 
-// -------------------- Book Status Update--------------------
+// -------------------- Book Status Update (active / inactive) --------------------
 export const bookStatusUpate = async (req: Request, res: Response) => {
-  // existing code...
-  // get id from the url params
-  let bookId = req.body["bookId"];
-
-  let bookObj = await BookModel.findById(bookId);
-  if (bookObj === undefined) {
-    res.status(404).json({ message: "Book not found" });
-  } else {
-    if (bookObj?.status === true) {
-      // perform soft delete operation
-      let bookStatus = await BookModel.updateOne(
-        { _id: bookId },
-        { $set: { status: false } },
-      ); //changed status to true
-
-      // check delete status
-      if (bookStatus.modifiedCount !== 0) {
-        // send response
-        res.status(200).json({ message: "Book Status Changed To In-Active" });
-      } else {
-        // error occured while deleting
-        res.status(400).json({ message: "Book not found" }); //book not found with id
-      }
-    } else {
-      // perform soft delete operation
-      let deletedBook = await BookModel.updateOne(
-        { _id: bookId },
-        { $set: { status: true } },
-      ); //changed status to true
-
-      // check delete status
-      if (deletedBook.modifiedCount !== 0) {
-        // send response
-        res.status(200).json({ message: "Book Status Changed To Active" });
-      } else {
-        // error occured while deleting
-        res.status(400).json({ message: "Book not found" }); //book not found with id
-      }
-    }
+  const bookId = req.body?.bookId;
+  if (!isValidId(bookId)) {
+    res.status(400).json({ message: "Invalid book id" });
+    return;
   }
+  const bookObj = await BookModel.findById(bookId);
+  if (!bookObj) {
+    res.status(404).json({ message: "Book not found" });
+    return;
+  }
+  const active = bookObj.status === false; // toggle
+  await BookModel.updateOne({ _id: bookId }, { $set: { status: active } });
+  res.status(200).json({ message: active ? "Book Status Changed To Active" : "Book Status Changed To In-Active" });
 };
+
+// -------------------- Chatbot --------------------
+const MAX_MESSAGE_LENGTH = 200;
 
 export const chatbot = async (req: Request, res: Response) => {
+  const message = asString(req.body?.message).trim();
+  if (!message) {
+    res.status(400).json({ message: "No query provided" });
+    return;
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    res.status(400).json({ message: `Please keep your question under ${MAX_MESSAGE_LENGTH} characters` });
+    return;
+  }
+
+  // escape the text so characters like "(" or ".*" are matched literally (no crashes / slow regexes)
+  const pattern = { $regex: escapeRegex(message), $options: "i" };
+  const books = await BookModel.find({
+    isDelete: { $ne: true },
+    $or: [{ title: pattern }, { genre: pattern }, { author: pattern }, { description: pattern }],
+  })
+    .select("title author genre description availability")
+    .limit(10)
+    .lean();
+
+  if (books.length === 0) {
+    res.status(200).json({ reply: "Sorry, no books found matching your search.", payload: [] });
+    return;
+  }
+
+  const fallbackReply =
+    `I found ${books.length} matching book(s):\n` +
+    books.map((b) => `• ${b.title} by ${b.author} (${b.availability > 0 ? "available" : "currently unavailable"})`).join("\n");
+
+  const apiKey = process.env["GEMINI_API_KEY"];
+  if (!apiKey) {
+    res.status(200).json({ reply: fallbackReply, payload: books });
+    return;
+  }
+
+  const bookSummary = books.map(({ title, author, genre, description, availability }) => ({
+    title, author, genre, description, availableCopies: availability,
+  }));
+  const prompt =
+    `You are a helpful library assistant. A user searched for: "${message}".\n` +
+    `Matching books from the library:\n${JSON.stringify(bookSummary, null, 2)}\n` +
+    `Write a short, friendly reply summarizing these books. Only mention books from this list.`;
+
   try {
-    const { message } = req.body;
-    console.log("message :",message)
-    if (!message) {
-      return res.status(400).json({ message: "No query provided" });
-    }
-    // Search the books collection for matching fields
-    const query = {
-      $or: [
-        { title: { $regex: message, $options: "i" } },
-        { genre: { $regex: message, $options: "i" } },
-        { author: { $regex: message, $options: "i" } },
-        { description: { $regex: message, $options: "i" } },
-      ],
-    };
-    const books = await BookModel.find(query);
-    console.log('books :',books)
-    if (!books || books.length === 0) {
-        const reply = "Sorry, no books found matching your search.";
-        return res.status(200).json({ reply, payload: [] });
-    }
-    // Build prompt for AI including found books data
-    const prompt = `User query: "${message}". Here are the matching books from the library (title, author, genre, description):\n${JSON.stringify(
-      books,
-      null,
-      2,
-    )}\nProvide a friendly response summarizing the results.`;
     const aiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${process.env["GEMINI_API_KEY"]}`,
+      "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
+        // key goes in a header, not the URL, so it doesn't end up in logs
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        signal: AbortSignal.timeout(15_000),
       },
     );
-    const aiData = await aiResponse.json();
-    console.log('ai data ;',aiData)
-    const reply =
-      aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no books found matching your search.";
-    return res.status(200).json({ reply, payload: books });
+    const aiData: any = aiResponse.ok ? await aiResponse.json() : null;
+    const reply = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || fallbackReply;
+    res.status(200).json({ reply, payload: books });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Something went wrong" });
+    console.error("Chatbot AI request failed:", error);
+    res.status(200).json({ reply: fallbackReply, payload: books });
   }
 };

@@ -1,4 +1,4 @@
-import {createBrowserRouter,RouterProvider} from 'react-router'
+import {createBrowserRouter,Navigate,RouterProvider} from 'react-router'
 import Home from './pages/landingPage/Home'
 import Login from './pages/landingPage/Login'
 import Register from './pages/landingPage/Register'
@@ -49,7 +49,7 @@ function App() {
         },
       {
           path:"user",
-          element:<ProtectedRoute><RootLayout/></ProtectedRoute>,
+          element:<ProtectedRoute role="user"><RootLayout/></ProtectedRoute>,
           children:[
             {
               path:"books",
@@ -68,11 +68,10 @@ function App() {
                 element:<MyBooks/>,
                 children:[
                   {
-                    path:"",
-                    element:<BorrowedBooksList/>
+                    index:true,
+                    element:<Navigate to="borrow-books" replace/>
                   },
                   {
-                    index:true,
                     path:"borrow-books",
                     element:<BorrowedBooksList/>
                   },
@@ -91,7 +90,7 @@ function App() {
     },
     {
       path:"admin",
-      element:<ProtectedRoute><RootLayout/></ProtectedRoute>,
+      element:<ProtectedRoute role="admin"><RootLayout/></ProtectedRoute>,
       children:[{
           index:true,
           element:<AdminDashboard/>

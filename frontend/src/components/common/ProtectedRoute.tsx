@@ -1,29 +1,19 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContextProvider";
-import { useEffect, useState } from "react";
+import { Spinner } from "./ui";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { loginStatus, pageLoading } = useAuth();
-  const navigate = useNavigate();
-  const [isChecking, setIsChecking] = useState(true);
+type ProtectedRouteProps = {
+  children: React.ReactNode;
+  role: "user" | "admin";
+};
 
-  useEffect(() => {
-    if (!loginStatus) {
-      navigate("/login");
-    }
-    setIsChecking(false);
-  }, [loginStatus, navigate]);
+// Render children only for a logged-in user with the given role; spinner while the session restores
+function ProtectedRoute({ children, role }: ProtectedRouteProps) {
+  const { currentUser, loginStatus, pageLoading } = useAuth();
 
-  if (isChecking || !loginStatus) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
+  if (pageLoading) return <Spinner fullScreen />;
+  if (!loginStatus || !currentUser) return <Navigate to="/login" replace />;
+  if (currentUser.role !== role) return <Navigate to={currentUser.role === "admin" ? "/admin" : "/user"} replace />;
   return <>{children}</>;
 }
 

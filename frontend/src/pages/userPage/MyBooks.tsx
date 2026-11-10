@@ -1,35 +1,20 @@
-import { useNavigate, Outlet } from 'react-router';
+import { NavLink, Outlet } from "react-router";
 
-import { useState } from 'react';
+// Tabs follow the URL, so the active tab is always right (also after a refresh)
+const tabClass = ({ isActive }: { isActive: boolean }) => `btn w-100 rounded-5 ${isActive ? "btn-dark" : "btn-outline-dark"}`;
 
-const MyBooks=() =>{
-  const navigate=useNavigate();
-  const [view,setView]=useState<boolean>(true)
-
+function MyBooks() {
   return (
-    <div className="container-fluid">
-      <div className="row m-5 mt-3">
-        <div className="col-6">
-          <button
-            className={`btn btn-${view===true ? "dark" : "outline-dark"} w-100 rounded-5 ${view===true ? "bg-dark" : "border bg-white"} mb-3 mb-md-0`}
-            onClick={()=>{navigate("/user/my-books/borrow-books");setView(true)}}
-          >
-            Borrowed Books
-          </button>
-        </div>
-        <div className="col-6">
-          <button
-            className={`btn btn-${view===false ? "dark" : "outline-dark"} w-100 rounded-5 ${view===false ? "bg-dark" : "border bg-white"} mb-3 mb-md-0`}
-            onClick={()=>{navigate("/user/my-books/returned-books");setView(false)}}
-          >
-            Returned Books
-          </button>
+    <div>
+      <div className="container pt-3">
+        <div className="row g-2">
+          <div className="col-6"><NavLink to="borrow-books" className={tabClass}>Borrowed Books</NavLink></div>
+          <div className="col-6"><NavLink to="returned-books" className={tabClass}>Returned Books</NavLink></div>
         </div>
       </div>
-     <Outlet/>
-
+      <Outlet />
     </div>
   );
-};
+}
 
 export default MyBooks;

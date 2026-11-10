@@ -2,31 +2,46 @@ import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
 import { UserModel } from "../models/UserModel";
 
-// middleware function to verify token
-export const verifyToken=async(req:Request,res:Response,next:NextFunction)=>{
-    try{
-        // get token from  cookies of req obj
-        let token=req.cookies["token"]
-        let secretKey=process.env["SECRET"]!
-        console.log('token and secrete :',token,secretKey)
-        // verify token
-        let decodedToken=verify(token,secretKey)
-        // check decoded token
-        if(decodedToken===undefined){
-            res.status(401).json({message:"invalid token"})
-        }
-        else{
-            let user=(decodedToken as any).user
-            if(user){
-                let userData=await UserModel.findOne({_id:user._id}) // if page refresh the token should contain latest data of user
-                if(userData){
-                    (req as any).user=userData
-                }
-            }
-            // pass to next middleware
-            next();
-        }
-    }catch(err){
-        next(err)
+// Load the logged-in user into req.user; 401 if not logged in, 403 if the account is on hold
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.cookies?.["token"];
+    if (!token) {
+      res.status(401).json({ message: "Please login to continue" });
+      return;
     }
-}
+
+    let decoded: any;
+    try {
+      decoded = verify(token, process.env["SECRET"]!);
+    } catch {
+      res.status(401).json({ message: "Session expired, please login again" });
+      return;
+    }
+
+    const userId = decoded?.user?._id;
+    const user = userId ? await UserModel.findById(userId).select("-password") : null;
+    if (!user) {
+      res.status(401).json({ message: "Session expired, please login again" });
+      return;
+    }
+    if (user.status === false) {
+      res.status(403).json({ message: "Your account is on hold. Please contact the library." });
+      return;
+    }
+
+    (req as any).user = user;
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Use after verifyToken on routes that only admins may call
+export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if ((req as any).user?.role !== "admin") {
+    res.status(403).json({ message: "Access denied. Admin only." });
+    return;
+  }
+  next();
+};

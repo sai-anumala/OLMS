@@ -7,29 +7,18 @@ import { verifyToken } from "./middlewares/verifyToken"
 import { AdminRoute } from "./routes/AdminRoutes"
 import cookieParser from 'cookie-parser'
 import exp, { NextFunction, Request, Response } from "express"
-import cors from "cors"
+import { corsMiddleware } from "./middlewares/cors"
 import { TransactionRoute } from "./routes/TransactionRoutes"
 import { chatbot } from "./controllers/BookControllers";
+import expressAsyncHandler from "express-async-handler";
+import { rateLimit } from "./middlewares/rateLimit";
+import { serializeUser } from "./services/UserView";
 
 // create server
 const app=exp();
 app.set("trust proxy", 1);
-// cors accept forntend server
-const allowedOrigins = process.env['FRONTEND_URL']
- ? process.env['FRONTEND_URL'].split(",")
- : [];
-app.use(cors({
- origin: (origin, callback) => {
-   if (!origin || allowedOrigins.includes(origin)) {
-     callback(null, true);
-   } else {
-     callback(new Error("Not allowed by CORS"));
-   }
- },
- credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+// CORS: which frontends may call this API (see middlewares/cors.ts and FRONTEND_URL)
+app.use(corsMiddleware())
  
 // body parser middleware
 app.use(exp.json())
@@ -64,25 +53,15 @@ app.use("/book-api",BookRoute)
 app.use("/admin-api",AdminRoute)
 // redirect to tranction if url start with transcation-api
 app.use("/transaction-api",TransactionRoute)
-// page refresh 
-app.get("/refresh",verifyToken,(req:Request,res:Response)=>{
-    // get user data from the req obj
-    let userData=(req as any).user
-   if(userData){
-     // send response
-     res.status(200).json({message:"page refreshed",payload:userData})
-   }
-   else{
-    res.status(401).json({message:"page refreshed",payload:null})
-   }
-})
+// Page refresh: return the logged-in user (verifyToken answers 401 without a session)
+app.get("/refresh",verifyToken,expressAsyncHandler(async(req:Request,res:Response)=>{
+  res.status(200).json({message:"page refreshed",payload:await serializeUser((req as any).user)})
+}))
 
-app.post("/chatbot",chatbot);
+// chatbot is public, so limit it to protect the paid AI API quota
+app.post("/chatbot",rateLimit({windowMs:60*1000,max:10}),expressAsyncHandler(chatbot));
 
-// error handling middleware
-// app.use((err:Error,req:Request,res:Response,next:NextFunction)=>{
-//     res.status(400).json({message:err.message})
-// })
+// Error handling middleware
 app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
 
   let statusCode = err.statusCode || 500;
@@ -103,7 +82,13 @@ app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
   // Cast error (e.g., invalid ObjectId)
   if (err.name === "CastError") {
     statusCode = 400;
-    message = `Invalid ${err.path}: ${err.value}`;
+    message = `Invalid ${err.path}`;
+  }
+
+  // don't leak internal error details to clients
+  if (statusCode >= 500) {
+    console.error(err);
+    message = "Internal Server Error";
   }
 
   res.status(statusCode).json({
