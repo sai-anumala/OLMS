@@ -1,239 +1,88 @@
-// import React from 'react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import toast from 'react-hot-toast';
 import type { AuthContextType, LoginType } from '../types/AuthContextType';
 import type { UserType } from '../types/UserType';
-import { loginUser } from '../services/user/Login';
-import { addToCart, removeFromCart } from '../services/user/CartApi';
-import { borrowBook } from '../services/user/BorrowBook';
-import { useBooks } from './BooksContext';
-import toast from 'react-hot-toast';
-import { returnBookApi } from '../services/user/ReturnBook';
-import { updateProfile } from '../services/common/UpdateUser';
-import { cartBorrowBooks } from '../services/user/BorrowCartBooks';
-// import type { PaymentFormType } from '../types/FineType';
-import { payFineAPi } from '../services/user/PayFine';
 import type { PaymentFormType } from '../types/FineType';
+import type { ApiResult } from '../services/api';
+import * as userApi from '../services/user';
+import { payFine as payFineApi } from '../services/transaction';
+import { useBooks } from './BooksContext';
 
-// Create the context object with a clear name.
-export const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-// Create the provider component.
-export function AuthContextProvider({children}: {children:ReactNode}) {
+// Session state: the server returns the updated user after every action, so we just store it
+export function AuthContextProvider({ children }: { children: ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const { fetchingBooks } = useBooks();
 
-  // state variables for managing user authentication & sesions
-  const [currentUser, setCurrentUser]=useState<UserType | null>(null);
-  const [isLoading, setIsLoading]=useState<boolean>(false);
-  const [loginError, setLoginError]=useState<string | null>(null);
-  const [loginStatus,setLoginStatus]=useState<boolean>(false)
-  const [pageLoading,setPageLoading]=useState<boolean>(true)
+  // store the returned user and show the server's message; optionally reload the catalog counts
+  const applyUserResult = (res: ApiResult, { reloadBooks = false } = {}) => {
+    if (res.status === 200) {
+      if (res.data.payload) setCurrentUser(res.data.payload as UserType);
+      toast.success(res.data.message);
+      if (reloadBooks) fetchingBooks();
+    } else {
+      toast.error(res.data.message);
+    }
+  };
 
-  const {fetchingBooks}=useBooks()
-  
-// ------------------------------- Login -------------------------------
-  const userLogin=async(userData:LoginType):Promise<void>=>{
-    try{
-      setIsLoading(true)
-      const resObj=await loginUser(userData)
-
-      // check response
-      if(resObj.status===200){
-        setCurrentUser(resObj.data.payload as UserType)
-        setLoginStatus(true)
-        setLoginError(null)
-        setIsLoading(false)
-        toast.success(resObj.data.message,{
-          position:'top-center'
-        })
-      }
-      // if response is not equal to 200
-      else{
-        setLoginError(resObj.data.message)  // login error message
-        setCurrentUser(null)
-        setLoginStatus(false)
-        setIsLoading(false)
-      }
-    }catch(err: unknown){
-      if (err instanceof Error) {
-        setLoginError(err.message);
-      } else {
-        setLoginError("An unknown error occurred");
-      }
+  const userLogin = async (credentials: LoginType) => {
+    setIsLoading(true);
+    const res = await userApi.loginUser(credentials);
+    setIsLoading(false);
+    if (res.status === 200) {
+      setCurrentUser(res.data.payload as UserType);
+      setLoginError(null);
+      toast.success(res.data.message);
+    } else {
       setCurrentUser(null);
-      setLoginStatus(false)
-    } finally{
-      setIsLoading(false);
+      setLoginError(res.data.message);
     }
-  }
+  };
 
-  //--------------------------- Add Book To Cart-------------------------
-  const bookAddToCart=async(bookId:string):Promise<void>=>{
-    // pass book details to it
-    const resObj=await addToCart(bookId)
-    if(resObj.status===200) {
-      setCurrentUser(resObj.data.payload as UserType) // updated cart from the server
-      // return resObj.data.message
-      toast.success(resObj.data.message)
+  const userLogout = async () => {
+    const res = await userApi.logoutUser();
+    if (res.status !== 200) {
+      toast.error("logout failed try again");
+      return;
     }
-    else{
-      toast.error(resObj.data.message)
-      // return resObj.data.message
-    }
-  }
+    toast.success(res.data.message);
+    setCurrentUser(null);
+  };
 
-  //--------------------------Remove Book Fromn Cart----------------------
-  const bookRemoveFromCart=async(bookId:string):Promise<void>=>{
-    // pass book details to it
-    const resObj=await removeFromCart(bookId)
+  // restore the session after a page refresh; 401 just means "not logged in"
+  const refreshPage = async () => {
+    const res = await userApi.refreshSession();
+    if (res.status === 200) setCurrentUser(res.data.payload as UserType);
+    else if (res.status === 403 || res.status === 0) toast.error(res.data.message);
+    setPageLoading(false);
+  };
 
-    // check status
-    if(resObj.status===200){
-      setCurrentUser(resObj.data.payload as UserType) // updated cart from the server
-      // return resObj.data.message
-      toast.success(resObj.data.message)
-    }
-    else{
-      // return resObj.data.message  //cart error mesage
-      toast.error(resObj.data.message)
-    }
-  }
+  const updateUser = async (user: UserType) => applyUserResult(await userApi.updateProfile(user));
+  const bookAddToCart = async (bookId: string) => applyUserResult(await userApi.addToCart(bookId));
+  const bookRemoveFromCart = async (bookId: string) => applyUserResult(await userApi.removeFromCart(bookId));
+  const bookBorrow = async (bookId: string) =>
+    applyUserResult(await userApi.borrowBook(bookId), { reloadBooks: true });
+  const cartBooksBorrow = async (books: string[]) =>
+    applyUserResult(await userApi.borrowCartBooks(books), { reloadBooks: true });
+  const returnBook = async (bookId: string) =>
+    applyUserResult(await userApi.returnBook(bookId), { reloadBooks: true });
+  const payFine = async (payment: PaymentFormType) =>
+    applyUserResult(await payFineApi(payment), { reloadBooks: true });
 
-// ----------------------------- Borrow Book ----------------------------
-  const bookBorrow=async(bookId:string):Promise<void>=>{
-    const resObj=await borrowBook(bookId)
-    if(resObj.status===200){
-      // server sends back the updated user (borrowed books, cart and fines)
-      setCurrentUser(resObj.data.payload as UserType)
-      // call books api
-      fetchingBooks()
-      toast.success(resObj.data.message)
-    }
-    else{
-      toast.error(resObj.data.message)
-    }
-  }
+  useEffect(() => {
+    refreshPage();
+  }, []);
 
-// ----------------------------- Return Book ---------------------------
-  const returnBook=async(bookId:string):Promise<void>=>{
-    const resObj=await returnBookApi(bookId)
-    // check status
-    if(resObj.status===200){
-      setCurrentUser(resObj.data.payload as UserType) // updated borrowed + returned books from the server
-      toast.success(resObj.data.message) 
-      fetchingBooks() // to maintain books count consistant across the components
-    }
-    else{
-      toast.error(resObj.data.message)
-    }
-  }
-
-  // function to update the user data
-  const updateUser=async (userData:UserType):Promise<void>=>{
-     const resObj=await updateProfile(userData)
-     if(resObj.status===200){
-      toast.success(resObj.data.message)
-      setCurrentUser(resObj.data.payload as UserType)
-     }
-     else{
-        toast.error(resObj.data.message)
-     }
-      
-  }
-
-//------------------ page refresh ----------------------
-  const refreshPage=async():Promise<void>=>{
-    try{
-          // make client request
-        const res=await fetch(`${import.meta.env.VITE_API_URL}/refresh`,{
-          method:"GET",
-          credentials:"include"
-          })
-        // parse response
-        const resObj=await res.json()
-        // check response status
-        if(res.status===200){ 
-          setCurrentUser(resObj.payload)
-          setLoginStatus(true)
-        }
-        else{
-          // 401 just means the visitor isn't logged in; 403 means the account is on hold
-          if(res.status===403) toast.error(resObj.message)
-          setCurrentUser(null)
-          setLoginStatus(false)
-        } 
-    }catch{
-      toast.error("Could not reach the server. Please try again later.");
-      setLoginStatus(false);
-    }
-    finally{
-      setPageLoading(false)
-    }
-  }
-
-// ----------------------user logout---------------------
-  const userLogout=async():Promise<void>=> {
-    try{
-      const res=await fetch(`${import.meta.env.VITE_API_URL}/user-api/user-logout`,{
-        method:"GET",
-        credentials:"include"
-      })
-      const resObj=await res.json()
-      if(res.status!==200){
-        toast.error("logout failed try again")
-        return
-      }
-      toast.success(resObj.message)
-      setCurrentUser(null);
-      setLoginStatus(false)
-    }catch{
-      toast.error("logout failed try again")
-    }
-  }
-
-  // ------------------Cart Books Borrow--------------
-  const cartBooksBorrow=async(books:string[])=>{
-        const resObj=await cartBorrowBooks(books)
-        if(resObj.status===200){
-            // server returns the full updated user (borrowed books added, cart emptied)
-            setCurrentUser(resObj.data.payload as UserType)
-            toast.success(resObj.data.message)
-            fetchingBooks()
-        }
-        else{
-            toast.error(resObj.data.message)
-        }
-   }
-
-  //  ---------------PAY Fine Book---------------------
-  const payFine=async(fineDetails:PaymentFormType)=>{
-    let resObj
-    try{
-      resObj=await payFineAPi(fineDetails)
-    }catch{
-      toast.error("Payment failed, please try again")
-      return
-    }
-    if(resObj.status===200){
-      setCurrentUser(resObj.data.payload as UserType)
-      toast.success(resObj.data.message)
-      fetchingBooks()
-    }
-    else{
-      toast.error(resObj.data.message)
-    }
-  }
-
-  
-// ------ whenever the page refreshes to store the current user details-------------
-  useEffect(()=>{
-    refreshPage()
-  },[])
-
-  // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     currentUser,
     isLoading,
     loginError,
-    loginStatus,
+    loginStatus: currentUser !== null,
+    pageLoading,
     userLogin,
     userLogout,
     updateUser,
@@ -243,24 +92,16 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     returnBook,
     cartBooksBorrow,
     payFine,
-    pageLoading
   // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers only use state setters
-  }), [currentUser, isLoading, loginError, loginStatus, pageLoading]);
+  }), [currentUser, isLoading, loginError, pageLoading]);
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-} 
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+}
 
-// Custom hook should be defined outside the component.
-export const useAuth=():AuthContextType => {
-  const context=useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthContextProvider');
-  }
+// eslint-disable-next-line react-refresh/only-export-components -- context hook lives with its provider
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthContextProvider');
   return context;
 };
 

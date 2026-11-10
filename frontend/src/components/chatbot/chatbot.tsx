@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
-import chatbot from "../../services/common/chatbot";
+import { askChatbot } from "../../services/chatbot";
 
 type Message = {
   text: string;
@@ -43,45 +41,16 @@ export default function ChatBot() {
     setInput("");
     setLoading(true);
 
-    try {
-      const res = await chatbot(input);
-
-      if (res.status === 200) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            text: res.message.text,
-            sender: "bot",
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            text: "Failed to get response",
-            sender: "bot",
-          },
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: "Something went wrong.",
-          sender: "bot",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+    const res = await askChatbot(input);
+    const text = res.status === 200 ? res.data.reply || "No response" : res.data.message || "Failed to get response";
+    setMessages((prev) => [...prev, { text, sender: "bot" }]);
+    setLoading(false);
   };
 
   return (
     <div
       style={{
-        width: "100%",
-        maxWidth: "420px",
-        margin: "20px auto",
+        width: "min(420px, calc(100vw - 32px))",
         borderRadius: "20px",
         overflow: "hidden",
         boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
@@ -89,7 +58,7 @@ export default function ChatBot() {
         border: "1px solid #e5e5e5",
         display: "flex",
         flexDirection: "column",
-        height: "500px",
+        height: "min(500px, calc(100dvh - 120px))",
       }}
     >
       {/* Header */}

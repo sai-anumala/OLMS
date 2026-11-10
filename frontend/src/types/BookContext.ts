@@ -6,12 +6,12 @@ import type { BookType } from "./BookType";
 export type BooksContextType = {
   books: BookType[];          // catalog: what readers can see (removed books excluded by the server)
   managedBooks: BookType[];   // admin list: every book, including removed ones
-  fetchingBooks:()=>void
-  fetchManagedBooks:()=>void
-  addNewBook:(newBookData:BookType)=>void;
-  deleteBook:(bookId:string)=>void;
-  updateBook:(bookData:BookType)=>void;
-  updateBookStatus:(bookId:string)=>void;
+  fetchingBooks: () => Promise<void>;
+  fetchManagedBooks: () => Promise<void>;
+  addNewBook: (book: BookType) => Promise<boolean>;
+  updateBook: (book: BookType) => Promise<boolean>;
+  deleteBook: (bookId: string) => Promise<boolean>;
+  updateBookStatus: (bookId: string) => Promise<boolean>;
 };
 
 export type ContextPropsType={

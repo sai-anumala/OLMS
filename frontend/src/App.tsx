@@ -1,4 +1,4 @@
-import {createBrowserRouter,RouterProvider} from 'react-router'
+import {createBrowserRouter,Navigate,RouterProvider} from 'react-router'
 import Home from './pages/landingPage/Home'
 import Login from './pages/landingPage/Login'
 import Register from './pages/landingPage/Register'
@@ -68,11 +68,10 @@ function App() {
                 element:<MyBooks/>,
                 children:[
                   {
-                    path:"",
-                    element:<BorrowedBooksList/>
+                    index:true,
+                    element:<Navigate to="borrow-books" replace/>
                   },
                   {
-                    index:true,
                     path:"borrow-books",
                     element:<BorrowedBooksList/>
                   },

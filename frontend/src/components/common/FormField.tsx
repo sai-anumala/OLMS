@@ -56,16 +56,11 @@ interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[];
 }
 
-export function FormSelect({
-  label,
-  error,
-  options,
-  className = "",
-  ...props
-}: FormSelectProps) {
-  return (
+// forwardRef so react-hook-form can read and reset the selected value
+export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
+  ({ label, error, options, className = "", ...props }, ref) => (
     <FormField label={label} error={error}>
-      <select className={`form-select ${className}`} {...props}>
+      <select ref={ref} className={`form-select ${className}`} {...props}>
         <option value="">Select {label}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -74,8 +69,10 @@ export function FormSelect({
         ))}
       </select>
     </FormField>
-  );
-}
+  )
+);
+
+FormSelect.displayName = "FormSelect";
 
 interface FormTextareaProps
   extends TextareaHTMLAttributes<HTMLTextAreaElement> {

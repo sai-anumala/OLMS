@@ -1,130 +1,84 @@
-import { useEffect, useState } from 'react'
-import { Col, Row } from 'react-bootstrap'
-import { useBooks } from '../../store/BooksContext'
-import { TiEdit } from 'react-icons/ti'
-import { IoStarHalfSharp } from 'react-icons/io5'
-import AddBook from "../../components/admin/AddBook";
-import BookEdit from '../../components/admin/BookEdit'
-import { VscEye, VscEyeClosed } from 'react-icons/vsc'
-import { RiDeleteBinLine } from 'react-icons/ri'
-import { LiaTrashRestoreSolid } from 'react-icons/lia'
- 
+import { useEffect, useState } from "react";
+import { TiEdit } from "react-icons/ti";
+import { IoStarHalfSharp } from "react-icons/io5";
+import { VscEye, VscEyeClosed } from "react-icons/vsc";
+import { RiDeleteBinLine } from "react-icons/ri";
+import { LiaTrashRestoreSolid } from "react-icons/lia";
+import { useBooks } from "../../store/BooksContext";
+import type { BookType } from "../../types/BookType";
+import BookFormModal from "../../components/admin/BookFormModal";
+import { PageHeader } from "../../components/common/ui";
+
 function BooksList() {
-  //  states to update
-  const [showModal,setShowModal]=useState<boolean>(false)
-  const [showEditModal,setShowEditModal]=useState<boolean>(false)
-  const [editBookId,setEditBookId]=useState<string >("")
-  
-  // books data and deleteBook function from context
-  const {managedBooks:books,fetchManagedBooks,deleteBook,updateBookStatus}=useBooks()
+  const { managedBooks: books, fetchManagedBooks, deleteBook, updateBookStatus } = useBooks();
+  const [form, setForm] = useState<{ show: boolean; book?: BookType }>({ show: false });
 
-  // load every book, including removed ones, from the admin endpoint
-  useEffect(()=>{
-    fetchManagedBooks()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[])
-
-  // function to handle add book modal 
-  const handleShow=()=>setShowModal(true);
-  const handleClose=()=>setShowModal(false)
-
-  // functions to handle edit modal
-  const handleEditShow=()=>setShowEditModal(true);
-  const handleEditClose=()=>setShowEditModal(false);
- 
-  // to delete books
-  const handleDeleteBook=async(id:string)=>deleteBook(id)
-
-  // update book status
-  const handleBookStatus=async(id:string)=>updateBookStatus(id)
-
-  // FUCNTION TO HANDLE EDIT BOOK MODAL
-  const handleEditBookModal=(bookId:string)=>{
-    handleEditShow()
-    setEditBookId(bookId)
-  }
+  // every book, including removed ones, comes from the admin endpoint
+  useEffect(() => {
+    fetchManagedBooks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
+  }, []);
 
   return (
-    <div>      
-      <AddBook show={showModal} onHide={handleClose}/>
-      <div className='border py-3 rounded-2 mt-3 m-3 w-75 mx-auto'>
-      <Row>
-          <Col className='mx-4' >
-            <h2 className='text-start'>Book Management</h2>
-            <p className='text-muted text-start'>Manage your library's book collection</p>
-          </Col>
-          <Col className='mt-4 text-end px-5'>
-            <button className='btn btn-dark text-white 'onClick={handleShow}>+ Add Books</button>
-          </Col>
-      </Row>
-      </div>
+    <div className="container">
+      <PageHeader title="Book Management" subtitle="Manage your library's book collection"
+        action={<button className="btn btn-dark text-nowrap" onClick={() => setForm({ show: true })}>+ Add Book</button>} />
 
-      <div className='border py-2 mt-4 w-75 mx-auto p-2'>
+      <div className="border rounded-2 p-2 mb-4">
         <div className="table-responsive">
-          <table className='table align-middle'>
-            <caption className='caption-top text-start fs-6 px-3'>Books <span className='border rounded-5 px-2 bg-dark text-white'>{books.length}</span></caption>
+          <table className="table align-middle text-start mb-0">
+            <caption className="caption-top px-2">Books <span className="badge rounded-pill bg-dark">{books.length}</span></caption>
             <thead>
               <tr>
-                <th colSpan={3}>Book Title</th>
-                <th colSpan={2}>Author</th> 
-                <th>Genre</th>
-                <th colSpan={2}>ISBN</th>
+                <th>Book</th>
+                <th className="d-none d-md-table-cell">Author</th>
+                <th className="d-none d-lg-table-cell">Genre</th>
+                <th className="d-none d-xl-table-cell">ISBN</th>
                 <th>Status</th>
-                <th>Availability</th>
-                <th>Rating</th>
-                <th colSpan={4}>Actions</th>
+                <th className="d-none d-sm-table-cell">Available</th>
+                <th className="d-none d-lg-table-cell">Rating</th>
+                <th>Actions</th>
               </tr>
             </thead>
-          
             <tbody>
-              {
-                books.map((bookobj)=>(
-                  <tr key={bookobj.isbn}>
-                  
-                    <td colSpan={3} className='align-middle'>
-                      <Row className='g-4 align-items-center flex-nowrap'>
-                        <Col >
-                          <img src={bookobj.image}  width="100rem" height="80px" style={{objectFit:'cover'}} />
-                        </Col>
-                        <Col className='ms-3'>{bookobj.title}</Col>
-                      </Row>
-                    </td>
-                  
-                    {/* Standard Table Data */}
-                    <td className='align-middle' colSpan={2}>{bookobj.author}</td>
-                    <td className='align-middle'>{bookobj.genre}</td>
-                    <td colSpan={2} className='align-middle'>{bookobj.isbn}</td>
-                    <td className='align-middle'>{bookobj.status ? <p className='text-success fw-bold text-sm'>Active</p> : <p className='fw-bold text-danger'>In-Active</p>}</td>
-                    <td className='align-middle'><span className=' bg-dark text-white rounded-5 px-2 '>{bookobj.availability}</span></td>
-                    <td className='align-middle'>{bookobj.rating} <IoStarHalfSharp className='mb-1'/></td>
-                  
-                    <td colSpan={4} className='align-middle'>
-                      <div className='d-flex flex-nowrap'>
-                        <button className='btn'><TiEdit className='fs-5' onClick={()=>{if(bookobj._id){handleEditBookModal(bookobj._id)}}}/></button>
-                        <button className='btn' onClick={()=>{
-                          if(bookobj._id){
-                            handleBookStatus(bookobj._id)
-                          }
-                        }}>{bookobj.status ? <VscEyeClosed  className='fs-4'/> : <VscEye className='fs-4'/>}</button>
-                        
-                        {/* delete book */}
-                        <button className='btn'onClick={()=>{
-                          if(bookobj._id){
-                            handleDeleteBook(bookobj._id)
-                          }
-                        }}>{!bookobj.isDelete ?<RiDeleteBinLine className='fs-4 text-danger'/> : <LiaTrashRestoreSolid className='fs-4 text-success' />}</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              }
+              {books.map((book) => (
+                <tr key={book._id} className={book.isDelete ? "opacity-50" : ""}>
+                  <td>
+                    <div className="d-flex align-items-center gap-2">
+                      <img src={book.image} alt="" className="rounded table-thumb" />
+                      <span className="text-break">{book.title}</span>
+                    </div>
+                  </td>
+                  <td className="d-none d-md-table-cell">{book.author}</td>
+                  <td className="d-none d-lg-table-cell">{book.genre}</td>
+                  <td className="d-none d-xl-table-cell text-nowrap">{book.isbn}</td>
+                  <td>
+                    {book.isDelete ? <span className="text-muted fw-bold">Removed</span>
+                      : book.status ? <span className="text-success fw-bold">Active</span>
+                      : <span className="text-danger fw-bold">Inactive</span>}
+                  </td>
+                  <td className="d-none d-sm-table-cell"><span className="badge rounded-pill bg-dark">{book.availability}</span></td>
+                  <td className="d-none d-lg-table-cell text-nowrap">{book.rating} <IoStarHalfSharp className="mb-1" /></td>
+                  <td>
+                    <div className="d-flex flex-nowrap">
+                      <button className="btn btn-sm" title="Edit" onClick={() => setForm({ show: true, book })}><TiEdit className="fs-5" /></button>
+                      <button className="btn btn-sm" title={book.status ? "Make inactive" : "Make active"} onClick={() => book._id && updateBookStatus(book._id)}>
+                        {book.status ? <VscEyeClosed className="fs-5" /> : <VscEye className="fs-5" />}
+                      </button>
+                      <button className="btn btn-sm" title={book.isDelete ? "Restore" : "Remove"} onClick={() => book._id && deleteBook(book._id)}>
+                        {book.isDelete ? <LiaTrashRestoreSolid className="fs-5 text-success" /> : <RiDeleteBinLine className="fs-5 text-danger" />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
-      <BookEdit showEditModal={showEditModal} onHideEditModal={handleEditClose} bookId={editBookId}/>
+      <BookFormModal show={form.show} book={form.book} onHide={() => setForm({ show: false })} />
     </div>
-  )
+  );
 }
- 
-export default BooksList
+
+export default BooksList;
