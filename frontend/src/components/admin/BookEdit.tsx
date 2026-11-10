@@ -13,7 +13,7 @@ type PropsType={
 function BookEdit({ showEditModal, onHideEditModal,bookId }:PropsType) { 
 
     // To get the update function
-    const {books,updateBook}=useBooks()
+    const {managedBooks:books,updateBook}=useBooks() // admin list, so removed books can be edited too
 
     // Find the book data based on the bookId prop
     const bookData=books.find(bookObj=>bookObj._id===bookId)

@@ -1,72 +1,21 @@
-import  { useState, useEffect } from 'react';
-import { useBooks } from "../../store/BooksContext";
-import { useUsers } from "../../store/UserContext";
+import type { BorrowedItemType } from "../../types/AdminType";
 
-type BorrowedItem ={
-  author:string ;
-  bookImage:string;
-  bookTitle:string;
-  borrowerName:string;
-  borrowerId:string;
-  dueDate:string;
-  fine:number;
-}
+type BorrowedBooksProps = {
+    items: BorrowedItemType[]; // prepared by the server (see /admin-api/dashboard)
+};
 
-function BorrowedBooks() {
-
-    const [borrowedData, setBorrowedData]=useState<BorrowedItem[]>([]);
-    
-    // getting books and users data
-    const { users }=useUsers() 
-    const { books }=useBooks() 
-    
-    useEffect(()=>{
-        if (!users || !books ) {
-            setBorrowedData([])
-        }
-        
-        const BorrowedArrays=users.map(user=>{
-            if(user.borrowed_books){ 
-               return user.borrowed_books
-                .filter(record=>record.bookId && record.bookId.length>0) 
-                .map(record=>{
-                    const bookDetails=books.find(book=>book._id===record.bookId)
-                    if (bookDetails) {
-                        return {
-                            author: bookDetails.author,
-                            bookImage: bookDetails.image,
-                            bookTitle: bookDetails.title,
-                            borrowerName: user.username,
-                            borrowerId: user._id,
-                            dueDate: record.dueDate,
-                            fine: record.fine,
-                        };
-                    }
-                    return null; 
-                }).filter((item):item is BorrowedItem=>item!==undefined);
-            }
-            else{
-                return []
-            }
-        });
-
-        // final borrowed list of users
-         const finalBorrowedList=BorrowedArrays.reduce((acc,borrowArr)=>[...acc,...borrowArr],[]);  
-        setBorrowedData(finalBorrowedList)
-    },[users,books]);
-
+function BorrowedBooks({ items }: BorrowedBooksProps) {
     return (
         <div className="container mt-4">
-            <h2 className="mb-4">Currently Borrowed Books ({borrowedData.length})</h2>
+            <h2 className="mb-4">Currently Borrowed Books ({items.length})</h2>
             <hr />
 
-            {borrowedData.length===0 ?(
+            {items.length===0 ?(
                 <div className="alert alert-success">No books are currently checked out.</div>
             ):(
                 <div>
-                    {borrowedData.map((item) => (
-                        
-                        <div key={item.borrowerId} className="border mb-1 d-flex align-items-center justify-content-between p-3">
+                    {items.map((item) => (
+                        <div key={`${item.borrowerId}-${item.bookId}`} className="border mb-1 d-flex align-items-center justify-content-between p-3">
                             <div className="d-flex align-items-center flex-grow-1">
                                 <img 
                                     src={item.bookImage} 
@@ -80,7 +29,7 @@ function BorrowedBooks() {
 
                             <div className="text-end">
                                 <p className="mb-1">Borrowed by: <strong className="text-primary">{item.borrowerName}</strong></p>
-                                <p className="mb-0 small text-muted">Due Date: {new Date(item.dueDate).toLocaleDateString()}</p>
+                                <p className={`mb-0 small ${item.overdue ? 'text-danger' : 'text-muted'}`}>Due Date: {new Date(item.dueDate).toLocaleDateString()}{item.overdue && " (overdue)"}</p>
                                 {item.fine>0 && (
                                     <p className="mb-0  text-danger fw-bold">Fine: ₹ {item.fine.toFixed(2)}</p>
                                 )}

@@ -1,6 +1,6 @@
 import { Button, Card, CardBody, CardImg, Col, Modal, ModalBody, Row } from "react-bootstrap"
 import { useBooks } from "../../store/BooksContext"
-import { useState, useMemo } from "react"
+import { useEffect, useState } from "react"
 import { LuUser } from "react-icons/lu";
 import { BiArrowFromLeft } from "react-icons/bi";
 import { CiShoppingCart } from "react-icons/ci";
@@ -11,6 +11,7 @@ import { useSearchTermContext } from "../../store/SearchContext";
 import type { BookType } from "../../types/BookType"
 import toast from "react-hot-toast";
 import CarouselC from "./CarouselC";
+import { getCatalogBooks } from "../../services/common/BooksApi";
 
 
 function Books() {
@@ -24,16 +25,24 @@ function Books() {
     const {currentUser,bookAddToCart,bookBorrow}=useAuth()
     const {searchTerm}=useSearchTermContext()
 
-    // search filter to filter (memoized)
-    const search = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
-    const filteredBooks = useMemo(() =>
-      books.filter((book: BookType) =>
-        book.title.toLowerCase().includes(search) ||
-        book.author.toLowerCase().includes(search) ||
-        book.genre.toLowerCase().includes(search)
-      ),
-      [books, search]
-    );
+    // search is done by the server; wait 300ms after typing stops before asking
+    const [searchResults,setSearchResults]=useState<BookType[] | null>(null)
+    useEffect(()=>{
+      const term=searchTerm.trim()
+      if(!term){
+        setSearchResults(null)
+        return
+      }
+      let cancelled=false
+      const timer=setTimeout(async()=>{
+        const resObj=await getCatalogBooks(term)
+        if(!cancelled){
+          setSearchResults(resObj.status===200 && Array.isArray(resObj.data.payload) ? resObj.data.payload as BookType[] : [])
+        }
+      },300)
+      return ()=>{cancelled=true;clearTimeout(timer)}
+    },[searchTerm,books]) // re-run when the catalog reloads (e.g. after a borrow)
+    const filteredBooks=searchResults ?? books
 
     // to handle cart login based
     function handleCart(bookId:string){
@@ -83,14 +92,14 @@ function Books() {
           <Row xs={1} sm={2} lg={3} xl={4} className="g-4 d-flex ms-1 flex-wrap justify-content-center align-items-center">
               {
                 filteredBooks.length>0 ? (
-                  filteredBooks.filter(obj=>obj.isDelete!==true).map(bookObj=>(
+                  filteredBooks.map(bookObj=>(
                       // <div className="col">
                       <Col key={bookObj._id || bookObj.isbn}>
                           <Card style={{width:"18rem"}} className="mb-3 mt-3 shadow">
                               <CardImg  src={bookObj.image} style={{height:"15.2rem", overflow:"hidden"}} className="img-fluid"/>
                               <CardBody className="d-flex flex-column">
                                   <div className="d-flex justify-around">
-                                    {bookObj.availability!==0 && bookObj.status===true ?  <span className="bg-dark text-white p-2 rounded-4"style={{fontSize:"0.6rem"}}>Available</span> : <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.5rem"}}>Not Available</span>}
+                                    {bookObj.isAvailable ?  <span className="bg-dark text-white p-2 rounded-4"style={{fontSize:"0.6rem"}}>Available</span> : <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.5rem"}}>Not Available</span>}
                                     <span className="ms-auto"> <FaStar className="text-warning mb-1"/> {bookObj.rating.toFixed(1)}</span>
                                   </div>
                                   <h6 className="text-dark text-start mt-1">{bookObj.title}</h6>
@@ -110,7 +119,7 @@ function Books() {
                                         { currentUser?.role!=="admin" && <button
                                           type="button"
                                           className="btn btn-warning"
-                                          disabled={bookObj.availability===0 || bookObj.status===false}
+                                          disabled={!bookObj.isAvailable}
                                           onClick={() => { if (bookObj._id) handleCart(bookObj._id); }}
                                           aria-label="Add to cart"
                                         >
@@ -166,7 +175,7 @@ function Books() {
                                   </span></p>
                                   
                                 <div className="d-flex">
-                                      {modalData.availability===0 ? <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}>Not Available</span>:<span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}> Available</span>}
+                                      {!modalData.isAvailable ? <span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}>Not Available</span>:<span className="bg-dark text-white p-2 rounded-4" style={{fontSize:"0.7rem"}}> Available</span>}
                                     <span className="ms-3 text-secondary">{modalData.availability} out of {modalData.copies ?? modalData.availability}</span>
                                 </div>
                                   
@@ -198,7 +207,7 @@ function Books() {
                                   </Row>
                                   <hr />
                                   {
-                                    modalData.availability===0 &&
+                                    !modalData.isAvailable &&
                                     <p className="border text-secondary rounded-3 ps-2">This book is currently unavailable....</p>
                                   }
 
@@ -206,7 +215,7 @@ function Books() {
                                   {currentUser===null || currentUser.role==="user" ? <div className="d-flex justify-between mb-2">
                                     {/* Cart Button */}
                                     <span>
-                                      <button type="button" className="btn btn-warning" onClick={()=>{if(modalData._id){handleCart(modalData._id)}}} disabled={modalData.availability===0}>
+                                      <button type="button" className="btn btn-warning" onClick={()=>{if(modalData._id){handleCart(modalData._id)}}} disabled={!modalData.isAvailable}>
                                       <span>
                                         <CiShoppingCart className="fs-5 me-1 cart-icon-transition"/> 
                                       </span> 
@@ -215,7 +224,7 @@ function Books() {
 
                                     {/* Borrow Button */}
                                     <span className="ms-auto"> 
-                                      <button className="btn btn-dark text-white" disabled={modalData.availability<=0} 
+                                      <button className="btn btn-dark text-white" disabled={!modalData.isAvailable} 
                                       onClick={()=>{if(modalData._id ){handleBorrow(modalData._id)}}}>
                                         Borrow
                                         <BiArrowFromLeft className="fs-5"/>

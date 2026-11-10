@@ -4,21 +4,13 @@ import { IoBookOutline, IoWarningOutline } from "react-icons/io5";
 import { FaRegClock } from "react-icons/fa";
 import UserGreet from "../../components/user/UserGreet";
 import BorrowedBooks from "./BorrowedBooksList";
-import type { BorrowedBookType } from "../../types/UserType";
 
 
 function UserDashBoard() {
 
   const {currentUser}=useAuth()
-  // overdue books count
-  let overDueCount=0;
-  const today=new Date();
-  (currentUser?.borrowed_books || [])?.map((obj : BorrowedBookType)=>{
-    const due=new Date(obj.dueDate)
-    if(due<today){
-      overDueCount+=1
-    }
-  })
+  // all numbers are calculated by the server
+  const summary=currentUser?.summary
   return (
     <div>
       <div className="container mt-4 w-75">
@@ -33,7 +25,7 @@ function UserDashBoard() {
                     </Col>
                     <Col xs="8">
                     <h5 className="text-center">Currently Borrowed</h5>
-                    <h4>{currentUser?.borrowed_books?.length}</h4>
+                    <h4>{summary?.borrowedCount ?? 0}</h4>
                     </Col>
                   </Row>
                 </CardBody>
@@ -46,7 +38,7 @@ function UserDashBoard() {
                     </Col>
                     <Col xs="8">
                     <h5 className="text-center">Over Due Books</h5>
-                    <h4>{overDueCount}</h4>
+                    <h4>{summary?.overdueCount ?? 0}</h4>
                     </Col>
                   </Row>
                 </CardBody>
@@ -59,7 +51,7 @@ function UserDashBoard() {
                     </Col>
                     <Col xs="8">
                     <h5 className="">Total Fines</h5>
-                    <h4>{currentUser?.fine}</h4>
+                    <h4>{summary?.totalFine ?? 0}</h4>
                     </Col>
                   </Row>
                 </CardBody>

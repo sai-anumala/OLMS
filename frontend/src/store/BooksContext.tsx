@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addBook } from "../services/admin/AddBook";
 import { deleteBookInfo } from "../services/admin/DeleteBook";
 import type { BooksContextType, ContextPropsType } from "../types/BookContext";
@@ -6,137 +6,80 @@ import type { BookType } from "../types/BookType";
 import toast from "react-hot-toast";
 import { updateBookDetails } from "../services/admin/UpdateBook";
 import { updateBookStatusInfo } from "../services/admin/BookStatus";
+import { getCatalogBooks, getManagedBooks } from "../services/common/BooksApi";
 
 // creating context obj
 const booksContextObj=createContext<BooksContextType|null>(null)
 
+// The server is the single source of truth for books: after every change we simply
+// reload the lists instead of re-applying the change locally.
 function BooksProvider(props:ContextPropsType) {
-    // usestate to store book data
     const [books,setBooks]=useState<BookType[]>([])
+    const [managedBooks,setManagedBooks]=useState<BookType[]>([])
+    // only reload the admin list if an admin page has asked for it
+    const managedLoaded=useRef(false)
 
-// ------------------------ GET ALL BOOKS-----------------------------
+// ------------------------ CATALOG -----------------------------
     async function fetchingBooks(){
-        const res:Response=await fetch(`${import.meta.env.VITE_API_URL}/book-api/books`);
-        if(res.ok){
-            const booksData=await res.json();
-            if (booksData?.payload && Array.isArray(booksData.payload)) {
-                setBooks(booksData.payload);
-            } else {
-                toast.error("Invalid data received from server");
-            }
+        const resObj=await getCatalogBooks()
+        if(resObj.status===200 && Array.isArray(resObj.data.payload)){
+            setBooks(resObj.data.payload as BookType[]);
         }
         else{
-            toast.error("Failed to load books. Please try again.");
+            toast.error(resObj.data.message || "Failed to load books. Please try again.");
         }
+    }
+
+// ------------------------ ADMIN LIST -----------------------------
+    async function fetchManagedBooks(){
+        managedLoaded.current=true
+        const resObj=await getManagedBooks()
+        if(resObj.status===200 && Array.isArray(resObj.data.payload)){
+            setManagedBooks(resObj.data.payload as BookType[]);
+        }
+        else{
+            toast.error(resObj.data.message);
+        }
+    }
+
+    // reload everything that may have changed after an admin action
+    async function reloadBooks(){
+        await Promise.all([fetchingBooks(), managedLoaded.current ? fetchManagedBooks() : null])
+    }
+
+    // shows the server's message and reloads on success
+    async function handleResult(resObj:{status:number,data:{message:string}}, okStatus=200){
+        if(resObj.status===okStatus){
+            toast.success(resObj.data.message)
+            await reloadBooks()
+            return true
+        }
+        toast.error(resObj.data.message)
+        return false
     }
 
 // -------------------------ADD NEW BOOK------------------------------
     async function addNewBook(newBookData: BookType): Promise<boolean> {
-      // make api call
-      const resObj = await addBook(newBookData);
-      if (resObj.status === 201) {
-        // adding new book along with book id to books state
-        // here prevBooks give mostly recent book data
-        if (resObj.data?.payload) {
-          setBooks(prevBooks => [...prevBooks, resObj.data.payload as BookType]);
-          toast.success(resObj.data.message);
-          return Promise.resolve(true);
-        } else {
-          toast.error("Invalid response from server");
-          return Promise.reject(new Error("Invalid response from server"));
-        }
-      } else {
-        toast.error(resObj.data.message);
-        return Promise.reject(new Error(resObj.data.message));
-      }
+      const ok=await handleResult(await addBook(newBookData), 201)
+      return ok ? Promise.resolve(true) : Promise.reject(new Error("Book not added"))
     }
 
-// ------------------------DELETE BOOK-------------------------------
+// ------------------------REMOVE / RESTORE BOOK-------------------------------
     async function deleteBook(bookId:string){
-        
-        const resObj=await deleteBookInfo(bookId) // make api function call
-        // checking status for 200 or 204(no content)
-        if(resObj.status===200){
-          setBooks(prevBooks=>prevBooks && prevBooks.map(book=>book._id===bookId ? {...book,isDelete:!book.isDelete} : book))
-          toast.success(resObj.data.message)
-        }
-        else {
-          toast.error(resObj.data.message)
-        }
+        await handleResult(await deleteBookInfo(bookId))
     }
 
 // ------------------------UPDATE BOOK---------------------------------
-    async function updateBook( modifiedBookData: BookType) {
-        // make api req
-        const resObj=await updateBookDetails(modifiedBookData)
-        // check status
-        if(resObj.status===200){
-            setBooks(prev=>prev.map(book=>book._id===modifiedBookData._id ? {...book,...modifiedBookData}:book))
-            toast.success(resObj.data.message)
-        }
-        else{
-            toast.error(resObj.data.message)
-        }
+    async function updateBook(modifiedBookData: BookType) {
+        await handleResult(await updateBookDetails(modifiedBookData))
     }
 
 // ---------------------- UPDATE BOOK STATUS---------------------------
     async function updateBookStatus(bookId:string){
-       const resObj=await updateBookStatusInfo(bookId) // make api function call
-
-        // checking status for 200
-        if(resObj.status===200 ){
-          setBooks(prevBooks=>prevBooks.map(book=>book._id===bookId ? {...book,status:!book.status} : book))
-          toast.success(resObj.data.message)
-        }
-        else {
-          toast.error(resObj.data.message)
-        }
+        await handleResult(await updateBookStatusInfo(bookId))
     }
 
-//     async function updateBookAvailability(bookId:string,action:string) {
-//     const book = books.find(book=>book._id===bookId);
-
-//     if (!book) {
-//         toast.error("Book not found.");
-//         return false;
-//     }
-
-//     let newAvailability;
-//     if (action === 'decrement') {
-//         if (book.availability <= 0) {
-//             toast.error(`The book "${book.title}" is out of stock.`);
-//             return false;
-//         }
-//         newAvailability = book.availability - 1;
-//     } else {
-//         newAvailability = book.availability + 1;
-//         toast.success("book returned successfully..")
-//     }
-
-//     const updatedBookData = { ...book, availability: newAvailability };
-
-//     try {
-//         const res = await fetch(`http://localhost:3000/books/${bookId}`, {
-//             method: "PUT",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify(updatedBookData)
-//         });
-
-//         if (res.status === 200) {
-//             const finalUpdatedBook = await res.json();
-//             setBooks(prevBooks => prevBooks.map(b => b._id === bookId ? finalUpdatedBook : b));
-//             return true;
-//         } else {
-//             toast.error(`Failed to update book stock on server. Status: ${res.status}`);
-//             return false;
-//         }
-//     } catch (error) {
-//         toast.error("Network error during book stock update.");
-//         return false;
-//     }
-// }
-
-// useEffect to call fetching books function after intial rendering
+// load the catalog after the first render
     useEffect(()=>{
         fetchingBooks();
     },[])
@@ -144,12 +87,16 @@ function BooksProvider(props:ContextPropsType) {
     // Memoize context value to prevent unnecessary re-renders
     const contextValue = useMemo(() => ({
       books,
+      managedBooks,
       addNewBook,
       deleteBook,
       updateBook,
       fetchingBooks,
+      fetchManagedBooks,
       updateBookStatus
-    }), [books]);
+    // the functions only use state setters and a ref, so they never go stale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [books, managedBooks]);
 
   return (
     <div>

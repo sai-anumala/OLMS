@@ -3,11 +3,12 @@ import { compare, hash } from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { UserModel } from "../models/UserModel";
 import { BookModel } from "../models/BookModel";
-import { fineFor, serializeUser } from "../services/CalculateFine";
+import { fineFor } from "../services/CalculateFine";
+import { MAX_BORROW_LIMIT, serializeUser, serializeUsers } from "../services/UserView";
+import { isBookAvailable } from "../services/BookView";
 import { buildProfileUpdate } from "../services/UserProfile";
 import { asString, EMAIL_RE, isValidId, MIN_PASSWORD_LENGTH, MOBILE_RE } from "../utils/validate";
 
-export const MAX_BORROW_LIMIT = 4;
 const LOAN_DAYS = 7;
 
 // The same options must be used when setting and clearing the cookie,
@@ -64,7 +65,7 @@ export const addNewUser = async (req: Request, res: Response) => {
     borrowed_books: [],
     return_books: [],
   });
-  res.status(201).json({ message: "User Created Successfully", payload: serializeUser(userDoc) });
+  res.status(201).json({ message: "User Created Successfully", payload: await serializeUser(userDoc) });
 };
 
 // -------------------- Login User-----------------------
@@ -86,13 +87,13 @@ export const loginUser = async (req: Request, res: Response) => {
   // keep the token small: only the id. verifyToken loads fresh user data on every request.
   const signedToken = sign({ user: { _id: userObj._id.toString() } }, process.env["SECRET"]!, { expiresIn: "1d" });
   res.cookie("token", signedToken, { ...cookieOptions(), maxAge: 24 * 60 * 60 * 1000 });
-  res.status(200).json({ message: "Logged in successfully", payload: serializeUser(userObj) });
+  res.status(200).json({ message: "Logged in successfully", payload: await serializeUser(userObj) });
 };
 
 // -------------------- Read all users (admin) -----------------
 export const readAllUsers = async (req: Request, res: Response) => {
   const usersData = await UserModel.find().select("-password");
-  res.status(200).json({ message: "Users details", payload: usersData.map(serializeUser) });
+  res.status(200).json({ message: "Users details", payload: await serializeUsers(usersData) });
 };
 
 // -------------------- Update own profile ---------------------
@@ -105,7 +106,7 @@ export const updateUser = async (req: Request, res: Response) => {
     return;
   }
   const updated = await UserModel.findByIdAndUpdate(userId, { $set: result.updates }, { new: true, runValidators: true });
-  res.status(200).json({ message: "Profile updated successfully", payload: serializeUser(updated) });
+  res.status(200).json({ message: "Profile updated successfully", payload: await serializeUser(updated) });
 };
 
 //--------------------- Add To Cart ----------------------
@@ -127,7 +128,8 @@ export const addToCart = async (req: Request, res: Response) => {
     res.status(409).json({ message: "Book already exists in cart" });
     return;
   }
-  res.status(200).json({ message: "Book successfully added to cart" });
+  const updatedUser = await UserModel.findById(userId).select("-password");
+  res.status(200).json({ message: "Book successfully added to cart", payload: await serializeUser(updatedUser) });
 };
 
 // -------------------- Remove From Cart-----------------
@@ -143,7 +145,8 @@ export const removeFromCart = async (req: Request, res: Response) => {
     res.status(404).json({ message: "Book not exists in cart" });
     return;
   }
-  res.status(200).json({ message: "Book removed from cart" });
+  const updatedUser = await UserModel.findById(userId).select("-password");
+  res.status(200).json({ message: "Book removed from cart", payload: await serializeUser(updatedUser) });
 };
 
 // -------------------- Shared borrow logic ---------------------
@@ -181,7 +184,7 @@ const borrowBooksForUser = async (user: any, requestedIds: unknown): Promise<Bor
     return { status: 409, message: `You can only borrow ${canBorrow} more book(s)..` };
   }
 
-  const unavailable = books.filter((b) => b.isDelete === true || b.status === false || b.availability <= 0);
+  const unavailable = books.filter((b) => !isBookAvailable(b));
   if (unavailable.length > 0) {
     return {
       status: 409,
@@ -231,7 +234,7 @@ const borrowBooksForUser = async (user: any, requestedIds: unknown): Promise<Bor
   return {
     status: 200,
     message: ids.length > 1 ? "Books Borrowed Successfully.." : "Book Borrowed Successfully..",
-    payload: serializeUser(updatedUser),
+    payload: await serializeUser(updatedUser),
   };
 };
 
@@ -281,7 +284,7 @@ export const returnBook = async (req: Request, res: Response) => {
   await BookModel.updateOne({ _id: bookId }, { $inc: { availability: 1 } });
 
   const updatedUser = await UserModel.findById(user._id).select("-password");
-  res.status(200).json({ message: "Book Returned Successfully...", payload: serializeUser(updatedUser) });
+  res.status(200).json({ message: "Book Returned Successfully...", payload: await serializeUser(updatedUser) });
 };
 
 //--------------------- User Logout----------------------

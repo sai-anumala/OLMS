@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { BookModel } from "../models/BookModel";
 import { asString, escapeRegex, isValidId, pickFields } from "../utils/validate";
+import { bookView } from "../services/BookView";
 
 // fields an admin may set on a book (never _id or isDelete)
 const BOOK_FIELDS = [
@@ -24,10 +25,27 @@ const checkBookNumbers = (book: Record<string, any>): string | null => {
   return null;
 };
 
-//-----------------------READ ALL BOOKS------------------
+const MAX_SEARCH_LENGTH = 100;
+
+//-----------------------CATALOG (public)------------------
+// Books visible to readers: removed books are never included.
+// Optional ?search= matches title, author or genre (case-insensitive).
 export const readAllBooks = async (req: Request, res: Response) => {
+  const search = asString(req.query["search"]).trim().slice(0, MAX_SEARCH_LENGTH);
+  const filter: Record<string, unknown> = { isDelete: { $ne: true } };
+  if (search) {
+    const pattern = { $regex: escapeRegex(search), $options: "i" };
+    filter["$or"] = [{ title: pattern }, { author: pattern }, { genre: pattern }];
+  }
+  const booksList = await BookModel.find(filter);
+  res.status(200).json({ message: "Books", payload: booksList.map(bookView) });
+};
+
+//-----------------------ALL BOOKS (admin)------------------
+// Includes removed books so the admin can restore them
+export const readManagedBooks = async (req: Request, res: Response) => {
   const booksList = await BookModel.find();
-  res.status(200).json({ message: "Books", payload: booksList });
+  res.status(200).json({ message: "Books", payload: booksList.map(bookView) });
 };
 
 // ------------------ Add Book---------------------------
@@ -51,7 +69,7 @@ export const addNewBook = async (req: Request, res: Response) => {
     return;
   }
   const resObj = await BookModel.create({ ...newBook, isbn });
-  res.status(201).json({ message: "Book Successfully Added To The Library", payload: resObj });
+  res.status(201).json({ message: "Book Successfully Added To The Library", payload: bookView(resObj) });
 };
 
 // ------------------ Update Book -----------------------

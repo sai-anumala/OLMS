@@ -1,5 +1,4 @@
 import type { BorrowedBookType } from "../../types/UserType";
-import { useBooks } from "../../store/BooksContext";
 import { useAuth } from "../../store/AuthContextProvider";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,7 +18,6 @@ type PaymentFormData = {
  
 function BorrowedBooksList() {
   const { currentUser, returnBook, payFine }=useAuth();
-  const { books } = useBooks();
  
   const [selectedMethod, setSelectedMethod]=useState<"card"|"wallet"|"upi">("card");
   const {register,handleSubmit,formState: { errors }} = useForm<PaymentFormData>();
@@ -34,8 +32,8 @@ function BorrowedBooksList() {
     dueDate: "",
   });
  
-  // to find slected fine book
-  const book=books.find((bookObj)=>bookObj._id===selectedFine.bookId)
+  // book details come attached to each borrowed record from the server
+  const book=selectedFine.book
  
  
   //to confirm payment
@@ -102,8 +100,7 @@ function BorrowedBooksList() {
     <div className="container m-4 w-75 mx-auto aligin-items-center">
       {borrowedDetails.length!==0 && <h4 className="mt-5">Currently Borrowed Books</h4>}
       {borrowedDetails.length!==0 ? borrowedDetails.map((borrowObj) => {
-        const bookDetails = books.find((bookObj) => borrowObj.bookId === bookObj._id);
-        if (!bookDetails) return null;
+        const bookDetails = borrowObj.book ?? { title: "Book no longer in catalog", author: "", image: "" };
         const due_date = new Date(borrowObj.dueDate).toLocaleDateString();
         return (
           <div

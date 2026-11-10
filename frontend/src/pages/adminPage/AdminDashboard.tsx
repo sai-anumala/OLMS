@@ -4,68 +4,34 @@ import { Card, CardBody, Col, Row } from "react-bootstrap"
 import UserGreet from "../../components/user/UserGreet"
 import { IoBookOutline, IoWarningOutline } from "react-icons/io5"
 import { FaRegClock } from "react-icons/fa"
-import { useUsers } from "../../store/UserContext"
 import { useEffect, useState } from "react"
 import BorrowedBooks from "../../components/admin/BorrowedBooks"
 import { IoIosPeople } from "react-icons/io"
-import { useBooks } from "../../store/BooksContext"
+import toast from "react-hot-toast"
+import { getDashboard } from "../../services/admin/Dashboard"
+import type { DashboardType } from "../../types/AdminType"
 import { ImBooks } from "react-icons/im"
 import { GrMoney } from "react-icons/gr"
 
 function AdminDashboard() {
 
-  // users data
-  const{users}=useUsers()
-  const {books}=useBooks()
-  //  to calculate total borrow and fines and overdues 
-  const [currentlyBorrowedBooks, setCurrentlyBorrowedBooks]=useState<number>(0);
-  const [overdueBooks, setOverdueBooks]=useState<number>(0);
-  const [totalFines, setTotalFines]=useState<number>(0);
-  const [collectedFines,setCollectedFines]=useState<number>(0);
+  // every number on this page is calculated by the server
+  const [dashboard,setDashboard]=useState<DashboardType | null>(null)
 
   useEffect(()=>{
-    let borrowedCount=0;
-    let overdueCount=0;
-    let finesTotal=0;
-    let collectedFine=0;
-    const today=new Date();
-
-    if(users){
-      users.map((userObj)=>{
-        if(userObj.borrowed_books){
-          borrowedCount+=userObj.borrowed_books.length;
-          userObj.borrowed_books.map((borrowObj)=>{
-            const dueDate=new Date(borrowObj.dueDate);
-             if (today.getTime()>dueDate.getTime()) {
-              overdueCount+=1;
-            }
-            if(borrowObj.fine>1){
-              finesTotal+=borrowObj.fine;
-            }
-            // return borrowObj
-          })
-        }
-        // return userObj
-      })
-
-    // paid fine total
-    users.map(userObj=>{
-        if(userObj && userObj.return_books){
-            userObj.return_books.map(obj=>{
-                return collectedFine+=obj.fine
-            })
-        }
-        
-    })
-      
+    const load=async()=>{
+      const resObj=await getDashboard()
+      if(resObj.status===200 && resObj.data.payload){
+        setDashboard(resObj.data.payload as DashboardType)
+      }
+      else{
+        toast.error(resObj.data.message)
+      }
     }
+    load()
+  },[])
 
-    setCurrentlyBorrowedBooks(borrowedCount);
-    setOverdueBooks(overdueCount);
-    setTotalFines(finesTotal);
-    setCollectedFines(collectedFine)
-  },[users])
-
+  const stats=dashboard?.stats
 
   return (
     <div className="container w-75 mt-3">
@@ -84,7 +50,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0">Total Books</h6></Row>
-                            <Row><h4>{books.length}</h4></Row>
+                            <Row><h4>{stats?.totalBooks ?? 0}</h4></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -99,7 +65,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0">Total Members</h6></Row>
-                            <Row><h4>{users.length}</h4></Row>
+                            <Row><h4>{stats?.totalMembers ?? 0}</h4></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -114,7 +80,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0"> Borrowed</h6></Row>
-                            <Row><h4>{currentlyBorrowedBooks}</h4></Row>
+                            <Row><h4>{stats?.borrowedCount ?? 0}</h4></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -129,7 +95,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0">Over Dues</h6></Row>
-                            <Row><h4>{overdueBooks}</h4></Row>
+                            <Row><h4>{stats?.overdueCount ?? 0}</h4></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -143,7 +109,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0">Collected Fines</h6></Row>
-                            <Row><h4>{collectedFines}</h4></Row>
+                            <Row><h4>{stats?.collectedFines ?? 0}</h4></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -158,7 +124,7 @@ function AdminDashboard() {
                         </Col>
                         <Col xs="8">
                             <Row><h6 className="text-start mb-0">Pending Fines</h6></Row>
-                            <Row><h3>{totalFines}</h3></Row>
+                            <Row><h3>{stats?.pendingFines ?? 0}</h3></Row>
                         </Col>
                     </Row>
                 </CardBody>
@@ -166,7 +132,7 @@ function AdminDashboard() {
 
 
         </div>
-        <BorrowedBooks/>
+        <BorrowedBooks items={dashboard?.currentlyBorrowed ?? []}/>
     </div>
   )
 }

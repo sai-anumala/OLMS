@@ -29,7 +29,7 @@ export const BookCard=({bookObj,onViewDetails,userCart}:BookCardProps) => {
                 </Button>
                 <CardBody className="d-flex flex-column">
                     <div className="d-flex justify-around">
-                        {bookObj.availability!==0 ? (
+                        {bookObj.isAvailable ? (
                             <span className="bg-dark text-white p-2 rounded-4" style={{ fontSize: "0.6rem" }}>
                                 Available
                             </span>
@@ -60,12 +60,12 @@ export const BookCard=({bookObj,onViewDetails,userCart}:BookCardProps) => {
                         </span>
                         {
                             userCart?(<span className="ms-auto"> 
-                                            <button className="btn  borrow" disabled={bookObj.availability===0} onClick={()=>{if(bookObj._id && currentUser?._id){bookBorrow(bookObj._id)}}}>
+                                            <button className="btn  borrow" disabled={!bookObj.isAvailable} onClick={()=>{if(bookObj._id && currentUser?._id){bookBorrow(bookObj._id)}}}>
                                                 Borrow
                                                <BiArrowFromLeft className="fs-5"/>
                                             </button>
                                       </span>):(<span className="ms-4">
-                            <button type="button" className="btn btn-warning" disabled={bookObj.availability===0} onClick={()=>{if(bookObj._id){handleCartBookCancel(bookObj._id)}}}>
+                            <button type="button" className="btn btn-warning" disabled={!bookObj.isAvailable} onClick={()=>{if(bookObj._id){handleCartBookCancel(bookObj._id)}}}>
                                 <CiShoppingCart className="fs-4" /> 
                             </button>
                         </span>)

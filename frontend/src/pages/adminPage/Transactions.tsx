@@ -1,7 +1,5 @@
 import { Col, Row } from 'react-bootstrap';
-import { useUsers } from '../../store/UserContext';
-import { useBooks } from '../../store/BooksContext';
-import type { TransactionFormType } from '../../types/FineType';
+import type { TransactionRowType } from '../../types/AdminType';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContextProvider';
 import toast from 'react-hot-toast';
@@ -9,56 +7,25 @@ import { getTransactionData } from '../../services/admin/TransactionDetails';
 
 function Transactions() {
   const { currentUser } = useAuth();
-  const { users, } = useUsers();
-  const { books } = useBooks();
 
-  const [transactions, setTransactions] = useState<TransactionFormType[]>([]);
+  // one row per payment, with member and book names, prepared and sorted by the server
+  const [paymentRows, setPaymentRows] = useState<TransactionRowType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // fetch users
-  const username = (userId: string) => {
-    const user = users.find(userObj => userObj._id === userId);
-    return user ? user.username : "unknown user";
-  };
-
-  // fetch books
-  const bookName = (bookId: string) => {
-    const book = books.find(bookObj => bookObj._id === bookId);
-    return book ? book.title : "unknown book";
-  };
-
-  // each member has one transaction document holding all their payments,
-  // so flatten them into one row per payment, newest first
-  const paymentRows = transactions
-    .flatMap(transactionObj => transactionObj.payments.map((payment, index) => ({
-      key: `${transactionObj._id}-${payment._id ?? index}`,
-      transactionId: transactionObj._id,
-      userId: transactionObj.userId,
-      payment,
-    })))
-    .sort((a, b) => new Date(b.payment.createdAt ?? 0).getTime() - new Date(a.payment.createdAt ?? 0).getTime());
-
-  // fetch transactions only if user is admin
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!currentUser || currentUser.role !== 'admin') {
         setLoading(false);
         return;
       }
-
-      try {
-        const resObj = await getTransactionData();
-        if (resObj.status === 200 && resObj.data.payload) {
-          setTransactions(resObj.data.payload as TransactionFormType[]);
-        } else {
-          setTransactions([]);
-        }
-      } catch {
-        toast.error('Failed to fetch transactions');
-        setTransactions([]);
-      } finally {
-        setLoading(false);
+      const resObj = await getTransactionData();
+      if (resObj.status === 200 && Array.isArray(resObj.data.payload)) {
+        setPaymentRows(resObj.data.payload as TransactionRowType[]);
+      } else {
+        toast.error(resObj.data.message || 'Failed to fetch transactions');
+        setPaymentRows([]);
       }
+      setLoading(false);
     };
 
     fetchTransactions();
@@ -121,26 +88,26 @@ function Transactions() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paymentRows.map(({ key, transactionId, userId, payment }) => (
-                    <tr key={key} style={{ color: "#F7F7F7" }}>
+                  {paymentRows.map((row) => (
+                    <tr key={row._id} style={{ color: "#F7F7F7" }}>
                       <td colSpan={2} className='align-middle text-capitalize'>
-                        {username(userId)}
+                        {row.username}
                       </td>
                       <td className='align-middle text-capitalize text-truncate'>
-                        {bookName(payment.bookId)}
+                        {row.bookTitle}
                       </td>
                       <td className='align-middle text-success fw-bold'>
-                        {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : "N/A"}
+                        {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A"}
                       </td>
                       <td className='align-middle'>
                         <span className='text-warning fw-bold rounded-5 px-2 text-md-truncate'>
-                          {payment.amount ?? 0}
+                          {row.amount}
                         </span>
                       </td>
-                      <td className='align-middle'>{transactionId}</td>
+                      <td className='align-middle'>{row.transactionId}</td>
                       <td className='align-middle text-success fw-bold text-capitalize'>
-                        {payment.paymentMethod ?? "--"}
-                        {"last4" in payment.paymentDetails && <span className='text-muted fw-normal'> ••{payment.paymentDetails.last4}</span>}
+                        {row.paymentMethod}
+                        {row.paymentReference && <span className='text-muted fw-normal'> ({row.paymentReference})</span>}
                       </td>
                     </tr>
                   ))}

@@ -1,9 +1,8 @@
 
 import type { BookType } from "../../types/BookType";
 import { Button, Col, Modal, ModalBody, Row } from "react-bootstrap";
-import { useBooks } from "../../store/BooksContext";
 import { FaStar } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BookCard } from "../../components/user/CartBookCard";
 import { LuUser } from "react-icons/lu";
 import { BiArrowFromLeft } from "react-icons/bi";
@@ -15,10 +14,9 @@ import { useNavigate } from "react-router";
 function Cart() {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [modalData, setModalData] = useState<BookType | null>(null);
-  const [cartBooks, setCartBooks] = useState<BookType[]>([]);
- 
   const { currentUser, cartBooksBorrow } = useAuth();
-  const { books } = useBooks();
+  // the server sends the cart with full book details already attached
+  const cartBooks: BookType[] = currentUser?.cart_books ?? [];
   const navigate = useNavigate();
  
   const handleViewDetails = (book: BookType) => {
@@ -26,29 +24,20 @@ function Cart() {
     setShowModal(true);
   };
  
+  // the server checks limits and availability and replies with a message
   const handleCartBorrow = () => {
-    if (!currentUser?.cart || currentUser.cart.length === 0) return;
-    cartBooksBorrow(currentUser.cart);
+    cartBooksBorrow(cartBooks.map(book => book._id!));
   };
  
   const handleModalBorrow = () => {
-    if (!modalData || modalData.availability === 0) return;
-    // cartBooksBorrow([modalData._id]);
-    cartBooksBorrow([modalData._id!]);
+    if (!modalData?._id) return;
+    cartBooksBorrow([modalData._id]);
  
     setShowModal(false);
   };
  
   const handleNavigate = () => navigate("/user/books");
  
-  useEffect(() => {
-    if (currentUser?.cart) {
-      const bookCart: BookType[] = currentUser.cart
-        .map(bookId => books.find(bookObj => bookId === bookObj._id))
-        .filter((book): book is BookType => book !== undefined);
-      setCartBooks(bookCart);
-    }
-  }, [books, currentUser]);
  
   return (
     <div className="container">
@@ -123,7 +112,7 @@ function Cart() {
                 </p>
                 <div className="d-flex">
                   <span className="bg-dark text-white p-2 rounded-4" style={{ fontSize: "0.7rem" }}>
-                    {modalData.availability === 0 ? "Not Available" : "Available"}
+                    {modalData.isAvailable ? "Available" : "Not Available"}
                   </span>
                   <span className="ms-3 text-secondary">{modalData.availability} out of {modalData.copies ?? modalData.availability}</span>
                 </div>
@@ -146,7 +135,7 @@ function Cart() {
                   </Col>
                 </Row>
                 <hr />
-                {modalData.availability === 0 && (
+                {!modalData.isAvailable && (
                   <p className="border text-secondary rounded-3 ps-2">
                     This book is currently unavailable...
                   </p>
@@ -155,7 +144,7 @@ function Cart() {
                   <span className="mx-auto">
                     <button
                       className="btn btn-warning text-dark borrow"
-                      disabled={modalData.availability === 0}
+                      disabled={!modalData.isAvailable}
                       onClick={handleModalBorrow}
                     >
                       Borrow <BiArrowFromLeft className="fs-5 borrow-icon" />

@@ -1,12 +1,15 @@
 import { Router } from "express"
 import expressAsyncHandler from "express-async-handler";
-import { addNewBook, bookStatusUpate, deleteBook, readAllBooks, updateBook } from "../controllers/BookControllers";
+import { addNewBook, bookStatusUpate, deleteBook, readAllBooks, readManagedBooks, updateBook } from "../controllers/BookControllers";
 import { isAdmin, verifyToken } from "../middlewares/verifyToken";
 
 export const BookRoute = Router();
 
 // read all the books (public)
 BookRoute.get("/books", expressAsyncHandler(readAllBooks))
+
+// admin only: every book, including removed ones
+BookRoute.get("/manage-books", verifyToken, isAdmin, expressAsyncHandler(readManagedBooks))
 
 // admin only: add new book
 BookRoute.post("/book", verifyToken, isAdmin, expressAsyncHandler(addNewBook))

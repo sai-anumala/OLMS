@@ -1,21 +1,20 @@
 import { IoNavigateCircleOutline } from "react-icons/io5";
 import { useAuth } from "../../store/AuthContextProvider";
-import { useBooks } from "../../store/BooksContext";
 import { useNavigate } from "react-router";
 function ReturnedBooks() {
  const { currentUser } = useAuth();
- const { books } = useBooks();
  const navigate = useNavigate();
  return (
     <div className="container w-100 w-md-75 mx-auto align-items-center my-4">
         {currentUser?.return_books && currentUser.return_books.length > 0 ? (
     <>
     <h4 className="fw-bold mb-4 text-center">Returned Books</h4>
-            {currentUser.return_books.map((returnObj)=>{const bookDetails=books.find((bookObj)=>returnObj.bookId===bookObj._id);
-              if (!bookDetails) return null;
+            {currentUser.return_books.map((returnObj)=>{
+              // book details come attached to each returned record from the server
+              const bookDetails=returnObj.book ?? { title: "Book no longer in catalog", author: "", image: "" };
               const return_date=new Date(returnObj.returnDate).toLocaleDateString();
               return (
-                  <div key={returnObj.transactionId} className="card mb-3 shadow-sm border-start border-1 border-light rounded-3 overflow-hidden">
+                  <div key={`${returnObj.bookId}-${returnObj.returnDate}`} className="card mb-3 shadow-sm border-start border-1 border-light rounded-3 overflow-hidden">
                     <div className="card-body p-3">
                       <div className="row align-items-center g-3">
                       {/* Book Image */}

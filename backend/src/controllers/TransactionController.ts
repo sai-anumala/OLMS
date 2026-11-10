@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import { UserModel } from "../models/UserModel";
 import { TransactionModel } from "../models/TransactionModel";
 import { BookModel } from "../models/BookModel";
-import { fineFor, serializeUser } from "../services/CalculateFine";
+import { fineFor } from "../services/CalculateFine";
+import { serializeUser } from "../services/UserView";
 import { asString, isValidId } from "../utils/validate";
 
 const PAYMENT_METHODS = ["card", "upi", "wallet"] as const;
@@ -98,14 +99,45 @@ export const createTransaction = async (req: Request, res: Response): Promise<vo
   );
 
   const updatedUser = await UserModel.findById(user._id).select("-password");
-  res.status(200).json({ message: "Payment successful and book returned", payload: serializeUser(updatedUser) });
+  res.status(200).json({ message: "Payment successful and book returned", payload: await serializeUser(updatedUser) });
 };
 
-// Read all transactions (admin only — enforced by the isAdmin middleware on the route)
+// Read all payments (admin only — enforced by the isAdmin middleware on the route).
+// Returns one ready-to-display row per payment, newest first, with member and book names filled in.
 export const readTransactionsData = async (req: Request, res: Response): Promise<void> => {
-  const transactions = await TransactionModel.find().sort({ createdAt: -1 });
+  const transactions = await TransactionModel.find().lean();
+
+  const userIds = [...new Set(transactions.map((t) => String(t.userId)))];
+  const bookIds = [...new Set(transactions.flatMap((t) => t.payments.map((p) => String(p.bookId))))];
+  const [users, books] = await Promise.all([
+    UserModel.find({ _id: { $in: userIds } }).select("username").lean(),
+    BookModel.find({ _id: { $in: bookIds } }).select("title").lean(),
+  ]);
+  const usernameOf = new Map(users.map((u) => [String(u._id), u.username]));
+  const titleOf = new Map(books.map((b) => [String(b._id), b.title]));
+
+  const rows = transactions
+    .flatMap((t) =>
+      t.payments.map((p: any) => ({
+        _id: p._id,
+        transactionId: t._id,
+        userId: t.userId,
+        username: usernameOf.get(String(t.userId)) ?? "Deleted member",
+        bookId: p.bookId,
+        bookTitle: titleOf.get(String(p.bookId)) ?? "Unknown book",
+        amount: p.amount,
+        paymentMethod: p.paymentMethod,
+        // only ever shows what is safe: last 4 card digits, UPI id or wallet id
+        paymentReference: p.paymentDetails?.last4
+          ? `card ••${p.paymentDetails.last4}`
+          : p.paymentDetails?.upiId ?? p.paymentDetails?.walletId ?? "",
+        createdAt: p.createdAt,
+      })),
+    )
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+
   res.status(200).json({
-    message: transactions.length ? "Transactions retrieved successfully" : "No transactions available",
-    payload: transactions,
+    message: rows.length ? "Transactions retrieved successfully" : "No transactions available",
+    payload: rows,
   });
 };

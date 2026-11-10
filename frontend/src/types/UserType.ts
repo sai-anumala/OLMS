@@ -1,10 +1,13 @@
+import type { BookSummaryType, BookType } from "./BookType";
 
-// borrowed book data
+// borrowed book data (fine, overdue and book are filled in by the server)
 export type BorrowedBookType={
   bookId?: string ; //api response type and normal type
   fine: number;
   borrowDate: string;
   dueDate: string;
+  overdue?: boolean;
+  book?: BookSummaryType | null;
 };
 
 // export type ReturnBookType={
@@ -21,6 +24,16 @@ export type ReturnBookType = {
   returnDate: string;
   method?:string,
   transactionId?:string
+  book?: BookSummaryType | null;
+};
+
+// numbers for the user dashboard, calculated by the server
+export type UserSummaryType = {
+  borrowedCount: number;
+  overdueCount: number;
+  totalFine: number;
+  borrowLimit: number;
+  remainingBorrows: number;
 };
 
 // user type
@@ -36,6 +49,8 @@ export type UserType = {
   fine?: number;
   borrowed_books?: BorrowedBookType[];
   return_books?:ReturnBookType[];
+  cart_books?: BookType[]; // full details of the books in `cart`
+  summary?: UserSummaryType;
 };
 
 

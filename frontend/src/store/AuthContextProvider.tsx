@@ -71,7 +71,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     // pass book details to it
     const resObj=await addToCart(bookId)
     if(resObj.status===200) {
-      setCurrentUser(prev=>prev && {...prev,cart:[...prev.cart,bookId]})
+      setCurrentUser(resObj.data.payload as UserType) // updated cart from the server
       // return resObj.data.message
       toast.success(resObj.data.message)
     }
@@ -88,7 +88,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
 
     // check status
     if(resObj.status===200){
-      setCurrentUser(prev=>prev && {...prev,cart:prev.cart.filter(book=>book!==bookId)})
+      setCurrentUser(resObj.data.payload as UserType) // updated cart from the server
       // return resObj.data.message
       toast.success(resObj.data.message)
     }
@@ -132,7 +132,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
      const resObj=await updateProfile(userData)
      if(resObj.status===200){
       toast.success(resObj.data.message)
-      setCurrentUser(prev=>prev && {...prev,...resObj.data.payload})
+      setCurrentUser(resObj.data.payload as UserType)
      }
      else{
         toast.error(resObj.data.message)
@@ -223,17 +223,6 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     }
   }
 
-  //  const payFine=async(fineDetails:string)=>{
-  //   let resObj=await payFineAPi(fineDetails)
-  //   if(resObj.status===200){
-  //     setCurrentUser(prev=>prev && {...prev,borrowed_books:prev.borrowed_books?.filter(obj=>obj.bookId!==fineDetails)})
-  //     toast.success(resObj.data.message) 
-  //     fetchingBooks() // to maintain books count consistant across the components
-  //   }
-  //   else{
-  //     toast.error(resObj.data.message)
-  //   }
-  // }
   
 // ------ whenever the page refreshes to store the current user details-------------
   useEffect(()=>{

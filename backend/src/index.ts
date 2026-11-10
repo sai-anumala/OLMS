@@ -12,7 +12,7 @@ import { TransactionRoute } from "./routes/TransactionRoutes"
 import { chatbot } from "./controllers/BookControllers";
 import expressAsyncHandler from "express-async-handler";
 import { rateLimit } from "./middlewares/rateLimit";
-import { serializeUser } from "./services/CalculateFine";
+import { serializeUser } from "./services/UserView";
 
 // create server
 const app=exp();
@@ -71,9 +71,9 @@ app.use("/admin-api",AdminRoute)
 app.use("/transaction-api",TransactionRoute)
 // page refresh 
 // page refresh: verifyToken already answers 401 when there is no valid session
-app.get("/refresh",verifyToken,(req:Request,res:Response)=>{
-  res.status(200).json({message:"page refreshed",payload:serializeUser((req as any).user)})
-})
+app.get("/refresh",verifyToken,expressAsyncHandler(async(req:Request,res:Response)=>{
+  res.status(200).json({message:"page refreshed",payload:await serializeUser((req as any).user)})
+}))
 
 // chatbot is public, so limit it to protect the paid AI API quota
 app.post("/chatbot",rateLimit({windowMs:60*1000,max:10}),expressAsyncHandler(chatbot));

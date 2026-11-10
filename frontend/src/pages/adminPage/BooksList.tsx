@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Col, Row } from 'react-bootstrap'
 import { useBooks } from '../../store/BooksContext'
 import { TiEdit } from 'react-icons/ti'
@@ -16,7 +16,13 @@ function BooksList() {
   const [editBookId,setEditBookId]=useState<string >("")
   
   // books data and deleteBook function from context
-  const {books,deleteBook,updateBookStatus}=useBooks()
+  const {managedBooks:books,fetchManagedBooks,deleteBook,updateBookStatus}=useBooks()
+
+  // load every book, including removed ones, from the admin endpoint
+  useEffect(()=>{
+    fetchManagedBooks()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[])
 
   // function to handle add book modal 
   const handleShow=()=>setShowModal(true);
@@ -106,7 +112,7 @@ function BooksList() {
                           if(bookobj._id){
                             handleDeleteBook(bookobj._id)
                           }
-                        }}>{bookobj.isDelete===false ?<RiDeleteBinLine className='fs-4 text-danger'/> : <LiaTrashRestoreSolid className='fs-4 text-success' />}</button>
+                        }}>{!bookobj.isDelete ?<RiDeleteBinLine className='fs-4 text-danger'/> : <LiaTrashRestoreSolid className='fs-4 text-success' />}</button>
                       </div>
                     </td>
                   </tr>
