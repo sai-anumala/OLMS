@@ -11,8 +11,7 @@ import { getCatalogBooks, getManagedBooks } from "../services/common/BooksApi";
 // creating context obj
 const booksContextObj=createContext<BooksContextType|null>(null)
 
-// The server is the single source of truth for books: after every change we simply
-// reload the lists instead of re-applying the change locally.
+// Books state; the server is the source of truth, so lists are reloaded after every change
 function BooksProvider(props:ContextPropsType) {
     const [books,setBooks]=useState<BookType[]>([])
     const [managedBooks,setManagedBooks]=useState<BookType[]>([])
@@ -94,8 +93,7 @@ function BooksProvider(props:ContextPropsType) {
       fetchingBooks,
       fetchManagedBooks,
       updateBookStatus
-    // the functions only use state setters and a ref, so they never go stale
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- functions only use setters and a ref
     }), [books, managedBooks]);
 
   return (

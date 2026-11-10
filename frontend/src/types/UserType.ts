@@ -10,13 +10,7 @@ export type BorrowedBookType={
   book?: BookSummaryType | null;
 };
 
-// export type ReturnBookType={
-//   bookId?:string;
-//   fine:number;
-//   borrowDate:string;
-//   returnDate:string;
-// }
-// return book type
+// returned book data
 export type ReturnBookType = {
   bookId: string;
   fine: number;

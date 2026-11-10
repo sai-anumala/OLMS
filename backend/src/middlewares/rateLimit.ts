@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 
-// Very small in-memory rate limiter (per IP, fixed window).
-// Good enough for a single server instance; use a shared store (e.g. Redis) if you scale out.
+// In-memory fixed-window rate limiter per IP (single server instance only)
 export const rateLimit = ({ windowMs, max }: { windowMs: number; max: number }) => {
   const hits = new Map<string, { count: number; resetAt: number }>();
 

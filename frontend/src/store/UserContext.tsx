@@ -12,8 +12,7 @@ import toast from "react-hot-toast";
 // Context
 const usersContextObj = createContext<UsersContextType | null>(null);
 
-// Holds the members list for the admin pages.
-// Must be rendered inside AuthContextProvider: users are only loaded when an admin is logged in.
+// Members list for admin pages; must sit inside AuthContextProvider (loads only for admins)
 function UserContext({ children }: ContextPropsType) {
    const { currentUser } = useAuth();
    const isAdmin = currentUser?.role === "admin";
@@ -105,8 +104,7 @@ function UserContext({ children }: ContextPropsType) {
    );
 }
 
-// ---------------- Custom hook ----------------
-// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components -- context hook lives with its provider
 export const useUsers=() => {
    const context =useContext(usersContextObj);
    if (!context) {throw new Error("Must be used within UserProvider")}

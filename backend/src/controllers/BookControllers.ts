@@ -27,9 +27,7 @@ const checkBookNumbers = (book: Record<string, any>): string | null => {
 
 const MAX_SEARCH_LENGTH = 100;
 
-//-----------------------CATALOG (public)------------------
-// Books visible to readers: removed books are never included.
-// Optional ?search= matches title, author or genre (case-insensitive).
+// Public catalog without removed books; ?search= matches title, author or genre
 export const readAllBooks = async (req: Request, res: Response) => {
   const search = asString(req.query["search"]).trim().slice(0, MAX_SEARCH_LENGTH);
   const filter: Record<string, unknown> = { isDelete: { $ne: true } };
@@ -41,8 +39,7 @@ export const readAllBooks = async (req: Request, res: Response) => {
   res.status(200).json({ message: "Books", payload: booksList.map(bookView) });
 };
 
-//-----------------------ALL BOOKS (admin)------------------
-// Includes removed books so the admin can restore them
+// Admin book list, including removed books so they can be restored
 export const readManagedBooks = async (req: Request, res: Response) => {
   const booksList = await BookModel.find();
   res.status(200).json({ message: "Books", payload: booksList.map(bookView) });

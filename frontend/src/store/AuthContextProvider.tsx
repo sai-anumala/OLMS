@@ -65,7 +65,6 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     }
   }
 
-// ------------------------------- Cart Handler--------------------------
   //--------------------------- Add Book To Cart-------------------------
   const bookAddToCart=async(bookId:string):Promise<void>=>{
     // pass book details to it
@@ -245,8 +244,7 @@ export function AuthContextProvider({children}: {children:ReactNode}) {
     cartBooksBorrow,
     payFine,
     pageLoading
-  // the handlers only use state setters, so re-creating the value when state changes is enough
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers only use state setters
   }), [currentUser, isLoading, loginError, loginStatus, pageLoading]);
 
   return (

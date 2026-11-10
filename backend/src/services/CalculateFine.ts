@@ -3,9 +3,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 type BorrowRecord = { dueDate?: Date | string | null };
 
-// Fine for one borrowed book, calculated from its due date.
-// Fines are always derived from the due date at the moment they are needed, so they are
-// never stale and never need to be written back to the database.
+// Fine for one borrowed book, derived from its due date at read time (never stored)
 export const fineFor = (record: BorrowRecord, now: Date = new Date()): number => {
   if (!record.dueDate) return 0;
   const overdueDays = Math.floor((now.getTime() - new Date(record.dueDate).getTime()) / DAY_MS);

@@ -6,9 +6,7 @@ type ProtectedRouteProps = {
   role: "user" | "admin"; // which kind of account may open these pages
 };
 
-// Shows the page only to a logged-in user with the right role.
-// While the session is still being restored after a page refresh, it shows a spinner
-// instead of redirecting to /login too early.
+// Render children only for a logged-in user with the given role; spinner while the session restores
 function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { currentUser, loginStatus, pageLoading } = useAuth();
 

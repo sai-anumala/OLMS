@@ -2,8 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
 import { UserModel } from "../models/UserModel";
 
-// Verifies the JWT cookie and attaches the latest user document (without password) to req.user.
-// Responds 401 when the user is not logged in and 403 when the account is on hold.
+// Load the logged-in user into req.user; 401 if not logged in, 403 if the account is on hold
 export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies?.["token"];

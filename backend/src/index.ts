@@ -7,7 +7,7 @@ import { verifyToken } from "./middlewares/verifyToken"
 import { AdminRoute } from "./routes/AdminRoutes"
 import cookieParser from 'cookie-parser'
 import exp, { NextFunction, Request, Response } from "express"
-import cors from "cors"
+import { corsMiddleware } from "./middlewares/cors"
 import { TransactionRoute } from "./routes/TransactionRoutes"
 import { chatbot } from "./controllers/BookControllers";
 import expressAsyncHandler from "express-async-handler";
@@ -17,24 +17,8 @@ import { serializeUser } from "./services/UserView";
 // create server
 const app=exp();
 app.set("trust proxy", 1);
-// cors accept forntend server
-// FRONTEND_URL can hold several comma-separated origins; defaults to the Vite dev server
-const allowedOrigins = (process.env['FRONTEND_URL'] || "http://localhost:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-app.use(cors({
- origin: (origin, callback) => {
-   if (!origin || allowedOrigins.includes(origin)) {
-     callback(null, true);
-   } else {
-     callback(null, false);
-   }
- },
- credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+// CORS: which frontends may call this API (see middlewares/cors.ts and FRONTEND_URL)
+app.use(corsMiddleware())
  
 // body parser middleware
 app.use(exp.json())
@@ -69,8 +53,7 @@ app.use("/book-api",BookRoute)
 app.use("/admin-api",AdminRoute)
 // redirect to tranction if url start with transcation-api
 app.use("/transaction-api",TransactionRoute)
-// page refresh 
-// page refresh: verifyToken already answers 401 when there is no valid session
+// Page refresh: return the logged-in user (verifyToken answers 401 without a session)
 app.get("/refresh",verifyToken,expressAsyncHandler(async(req:Request,res:Response)=>{
   res.status(200).json({message:"page refreshed",payload:await serializeUser((req as any).user)})
 }))
@@ -78,10 +61,7 @@ app.get("/refresh",verifyToken,expressAsyncHandler(async(req:Request,res:Respons
 // chatbot is public, so limit it to protect the paid AI API quota
 app.post("/chatbot",rateLimit({windowMs:60*1000,max:10}),expressAsyncHandler(chatbot));
 
-// error handling middleware
-// app.use((err:Error,req:Request,res:Response,next:NextFunction)=>{
-//     res.status(400).json({message:err.message})
-// })
+// Error handling middleware
 app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
 
   let statusCode = err.statusCode || 500;

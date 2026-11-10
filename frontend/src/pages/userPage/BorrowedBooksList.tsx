@@ -65,13 +65,8 @@ function BorrowedBooksList() {
       paymentMethod: data.paymentMethod,
       paymentDetails: paymentInfo
     };
-    // callinf pay fine api from context
+    // paying the fine also returns the book on the server
     payFine(paymentDetails)
-
-    // return book in place of fine module
-    // returnBook(selectedFine.bookId as string);
-    // payFine(selectedFine.bookId as string);
-    
   };
  
  

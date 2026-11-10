@@ -6,12 +6,7 @@ export const MAX_BORROW_LIMIT = 4;
 
 const toPlain = (doc: any) => (typeof doc?.toObject === "function" ? doc.toObject() : { ...doc });
 
-// Convert user documents into the JSON the frontend shows, with everything already worked out:
-// - no password
-// - up-to-date fines and an `overdue` flag on each borrowed book
-// - book details attached to borrowed / returned records and the cart (`cart_books`)
-// - a `summary` with the numbers the dashboards display
-// All referenced books are loaded with a single query.
+// User JSON for clients: no password, live fines/overdue, attached book details, cart_books and summary
 export const serializeUsers = async (userDocs: any[]) => {
   const users = userDocs.filter(Boolean).map(toPlain);
 

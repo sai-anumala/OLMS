@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
-// Returns the value only if it is a string. Anything else (objects like {"$ne": null},
-// arrays, numbers) becomes "" so it can never be used as a MongoDB query operator.
+// Strings only; anything else becomes "" so it can't be used as a MongoDB operator
 export const asString = (value: unknown): string =>
   typeof value === "string" ? value : "";
 

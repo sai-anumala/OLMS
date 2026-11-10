@@ -1,6 +1,4 @@
-// older versions of this app saved full card numbers and CVVs.
-// This replaces them with only the last 4 digits. Safe to run more than once.
-//   npm run scrub-card-data
+// One-off cleanup: replace stored card numbers/CVVs with the last 4 digits (run: npm run scrub-card-data)
 import { config } from "dotenv";
 import { connect, disconnect } from "mongoose";
 import { TransactionModel } from "../models/TransactionModel";

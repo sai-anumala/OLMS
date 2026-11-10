@@ -8,8 +8,7 @@ import { asString, isValidId } from "../utils/validate";
 
 const PAYMENT_METHODS = ["card", "upi", "wallet"] as const;
 
-// Turn what the client sent into the small, safe record we keep.
-// Full card numbers and CVVs are NEVER stored — only the last 4 digits.
+// Validate payment details and keep only safe fields (card: last 4 digits, never the CVV)
 const safePaymentDetails = (method: string, details: any): Record<string, string> | null => {
   if (method === "card") {
     const cardNumber = asString(details?.card_number).replace(/\s/g, "");
@@ -102,8 +101,7 @@ export const createTransaction = async (req: Request, res: Response): Promise<vo
   res.status(200).json({ message: "Payment successful and book returned", payload: await serializeUser(updatedUser) });
 };
 
-// Read all payments (admin only — enforced by the isAdmin middleware on the route).
-// Returns one ready-to-display row per payment, newest first, with member and book names filled in.
+// Admin: one display-ready row per payment, newest first
 export const readTransactionsData = async (req: Request, res: Response): Promise<void> => {
   const transactions = await TransactionModel.find().lean();
 

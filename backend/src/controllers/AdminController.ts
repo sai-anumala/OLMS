@@ -85,8 +85,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   res.status(200).json({ message: "User information deleted Successfully..." });
 };
 
-//--------------------- Dashboard -----------------------
-// Everything the admin dashboard shows, already calculated
+// Admin dashboard: stats and the currently borrowed list
 export const dashboard = async (req: Request, res: Response) => {
   const [members, totalBooks, collected] = await Promise.all([
     UserModel.find({ role: { $ne: "admin" } }).select("-password"),

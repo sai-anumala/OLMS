@@ -6,9 +6,7 @@ type ProfileResult =
   | { ok: true; updates: Record<string, string> }
   | { ok: false; status: number; message: string };
 
-// Builds a safe $set object from an untrusted request body.
-// Only username, email, mobile (and optionally password) can ever be changed here —
-// role, fine, status, cart and borrowed books are never taken from the client.
+// Build a validated $set from the request body; only username, email, mobile (and optional password)
 export const buildProfileUpdate = async (
   body: any,
   userId: string,

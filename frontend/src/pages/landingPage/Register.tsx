@@ -32,21 +32,6 @@ function Register() {
       email:data.email,
       password:data.password
     } as UserType;
-    // try {
-    //   await registerUser(userDataWithRole);
-    //   setStatus("Successfully registered.");
-    //   if(registerStatus){
-    //     setIsSuccess(true);
-    //   }
-    //   else{
-    //     setIsSuccess(false)
-    //   }
-    //   setTimeout(()=>navigate("/login"),2000)
-    // } catch (error: any) {
-    //   setStatus(`Registration failed: ${error.message}`);
-    // } finally {
-    //   setIsLoading(false);
-    // }
    try{
      const regiStatus= await registerApi(newUser)
      if(regiStatus.status===201){
@@ -140,10 +125,6 @@ function Register() {
                 value: 6,
                 message: 'Password must be at least 6 characters'
               },
-              // pattern: {
-              //   value: /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/,
-              //   message: 'Password must start with a capital letter, include a number and special character'
-              // }
             })}
           />
           <div className="invalid-feedback">{errors.password?.message}</div>

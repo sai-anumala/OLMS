@@ -11,15 +11,25 @@ import { asString, EMAIL_RE, isValidId, MIN_PASSWORD_LENGTH, MOBILE_RE } from ".
 
 const LOAN_DAYS = 7;
 
-// The same options must be used when setting and clearing the cookie,
-// otherwise the browser will not remove it on logout.
-const cookieOptions = (): CookieOptions => ({
-  httpOnly: true,
-  sameSite: "none",
-  secure: true,
-  path: "/",
-  ...(process.env["COOKIE_DOMAIN"] ? { domain: process.env["COOKIE_DOMAIN"] } : {}),
-});
+// Use COOKIE_DOMAIN only when the request host belongs to it (browsers reject mismatched domains)
+const cookieDomainFor = (req: Request): string | undefined => {
+  const domain = process.env["COOKIE_DOMAIN"]?.trim();
+  if (!domain) return undefined;
+  const bare = domain.replace(/^\./, "").toLowerCase();
+  const host = req.hostname.toLowerCase();
+  return host === bare || host.endsWith(`.${bare}`) ? domain : undefined;
+};
+
+// HTTPS: Secure + SameSite=None for cross-site; plain HTTP (localhost): SameSite=Lax. Same options set and clear the cookie.
+const cookieOptions = (req: Request): CookieOptions => {
+  const domain = cookieDomainFor(req);
+  return {
+    httpOnly: true,
+    ...(req.secure ? { sameSite: "none" as const, secure: true } : { sameSite: "lax" as const, secure: false }),
+    path: "/",
+    ...(domain ? { domain } : {}),
+  };
+};
 
 // -------------------- Add New User / Register ----------
 export const addNewUser = async (req: Request, res: Response) => {
@@ -86,7 +96,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
   // keep the token small: only the id. verifyToken loads fresh user data on every request.
   const signedToken = sign({ user: { _id: userObj._id.toString() } }, process.env["SECRET"]!, { expiresIn: "1d" });
-  res.cookie("token", signedToken, { ...cookieOptions(), maxAge: 24 * 60 * 60 * 1000 });
+  res.cookie("token", signedToken, { ...cookieOptions(req), maxAge: 24 * 60 * 60 * 1000 });
   res.status(200).json({ message: "Logged in successfully", payload: await serializeUser(userObj) });
 };
 
@@ -192,8 +202,7 @@ const borrowBooksForUser = async (user: any, requestedIds: unknown): Promise<Bor
     };
   }
 
-  // Reserve one copy of each book. The {availability: {$gt: 0}} condition makes
-  // "check + decrement" atomic, so two users can never take the last copy at the same time.
+  // Atomically reserve one copy per book; the availability > 0 filter prevents overselling the last copy
   const reserved: string[] = [];
   const release = () =>
     reserved.length ? BookModel.updateMany({ _id: { $in: reserved } }, { $inc: { availability: 1 } }) : null;
@@ -215,8 +224,7 @@ const borrowBooksForUser = async (user: any, requestedIds: unknown): Promise<Bor
   dueDate.setDate(dueDate.getDate() + LOAN_DAYS);
   const records = ids.map((bookId) => ({ bookId, borrowDate, dueDate, fine: 0 }));
 
-  // Add to the user's borrowed list only if the limit still holds and none of the books
-  // are borrowed already ("borrowed_books.N" exists means the user has more than N books).
+  // Atomic push: fails if the limit would be exceeded (borrowed_books.N exists) or a book is already borrowed
   const userUpdate = await UserModel.updateOne(
     {
       _id: user._id,
@@ -289,6 +297,6 @@ export const returnBook = async (req: Request, res: Response) => {
 
 //--------------------- User Logout----------------------
 export const userLogout = async (req: Request, res: Response) => {
-  res.clearCookie("token", cookieOptions());
+  res.clearCookie("token", cookieOptions(req));
   res.status(200).json({ message: "Logout successful" });
 };
