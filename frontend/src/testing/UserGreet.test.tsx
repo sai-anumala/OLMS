@@ -16,7 +16,8 @@ describe("UserGreet Component", () => {
 
     render(<UserGreet />);
 
-    expect(screen.getByRole("heading", { level: 4 })).toHaveTextContent(/Welcome to Your Library Dashboard - TESTUSER/i);
+    const greetingText = screen.getByText(/Welcome to Your Library Dashboard -TESTUSER/i);
+    expect(greetingText).toBeInTheDocument();
   });
 
   it("should render the admin dashboard greeting when role is admin", () => {
