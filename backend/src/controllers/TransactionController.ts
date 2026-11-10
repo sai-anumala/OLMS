@@ -106,7 +106,7 @@ const finalizePayment = async (paymentId: string, orderId: string, expectedUserI
         $push: {
           return_books: {
             bookId, borrowDate: record?.borrowDate, returnDate: new Date(),
-            fine: amount, method: payment.method, transactionId: transactionDoc._id,
+            fine: amount, method: payment.method, transactionId: transactionDoc._id, paymentId: payment.id,
           },
         },
       },

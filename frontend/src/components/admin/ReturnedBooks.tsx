@@ -43,7 +43,7 @@ function ReturnedBooks() {
               </div>
               <div className="min-w-0">
                 <div className="text-secondary small">Transaction</div>
-                <div className="small text-truncate" title={record.transactionId}>{record.transactionId ?? "—"}</div>
+                <div className="small text-break" title={record.paymentId ?? record.transactionId}>{record.paymentId ?? record.transactionId ?? "—"}</div>
               </div>
             </div>
           </div>

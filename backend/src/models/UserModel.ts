@@ -48,6 +48,10 @@ const ReturnBookSchema=new Schema({
     transactionId:{
         type:Schema.Types.ObjectId,
         ref:"Transaction"
+    },
+    // Razorpay payment id (pay_...) for fines paid online
+    paymentId:{
+        type:String
     }
 },{
     strict:"throw",

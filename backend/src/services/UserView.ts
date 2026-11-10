@@ -1,4 +1,5 @@
 import { BookModel } from "../models/BookModel";
+import { TransactionModel } from "../models/TransactionModel";
 import { fineFor } from "./CalculateFine";
 import { bookSummary, bookView } from "./BookView";
 
@@ -19,6 +20,24 @@ export const serializeUsers = async (userDocs: any[]) => {
   const books = bookIds.size ? await BookModel.find({ _id: { $in: [...bookIds] } }).lean() : [];
   const bookById = new Map(books.map((b) => [String(b._id), b]));
 
+  // returns paid online before paymentId was stored: find their Razorpay payment id (one query)
+  const missingTxIds = new Set<string>();
+  for (const user of users)
+    for (const r of user.return_books || []) if (r.transactionId && !r.paymentId) missingTxIds.add(String(r.transactionId));
+  const txById = new Map<string, any[]>();
+  if (missingTxIds.size) {
+    const txs = await TransactionModel.find({ _id: { $in: [...missingTxIds] } }).select("payments").lean();
+    for (const t of txs) txById.set(String(t._id), (t.payments as any[]).filter((p) => p.razorpayPaymentId));
+  }
+  // the payment for this book closest in time to the return
+  const paymentIdFor = (record: any): string | undefined => {
+    if (record.paymentId) return record.paymentId;
+    const candidates = (txById.get(String(record.transactionId)) ?? []).filter((p) => String(p.bookId) === String(record.bookId));
+    const returnedAt = new Date(record.returnDate).getTime();
+    candidates.sort((a, b) => Math.abs(new Date(a.createdAt).getTime() - returnedAt) - Math.abs(new Date(b.createdAt).getTime() - returnedAt));
+    return candidates[0]?.razorpayPaymentId;
+  };
+
   const now = new Date();
   return users.map((user) => {
     delete user.password;
@@ -32,10 +51,10 @@ export const serializeUsers = async (userDocs: any[]) => {
         book: bookSummary(bookById.get(String(record.bookId))),
       };
     });
-    user.return_books = (user.return_books || []).map((record: any) => ({
-      ...record,
-      book: bookSummary(bookById.get(String(record.bookId))),
-    }));
+    user.return_books = (user.return_books || []).map((record: any) => {
+      const paymentId = paymentIdFor(record);
+      return { ...record, ...(paymentId && { paymentId }), book: bookSummary(bookById.get(String(record.bookId))) };
+    });
     // cart_books: full book details for the cart page (books removed from the library are skipped)
     user.cart_books = (user.cart || [])
       .map((id: any) => bookById.get(String(id)))

@@ -18,6 +18,7 @@ export type ReturnBookType = {
   returnDate: string;
   method?:string,
   transactionId?:string
+  paymentId?:string // Razorpay payment id (pay_...)
   book?: BookSummaryType | null;
 };
 
