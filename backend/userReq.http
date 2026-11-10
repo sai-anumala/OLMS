@@ -121,19 +121,23 @@ Content-Type: application/json
   "books":["6900aca458ec212ff7e3b45c","6900aca458ec212ff7e3b460"]
 }
 
-### payment
-POST http://localhost:8008/transaction-api/transaction
+### pay a fine, step 1: create a Razorpay order (the server calculates the amount)
+POST http://localhost:8008/transaction-api/order
 Content-Type: application/json
 
 {
-  "userId":"6903434be6fdb6034cbc1655",
-        "bookId":"6900aca458ec212ff7e3b45c",
-        "method":"wallet",
-        "amount":"200",
-        "paymentDetails":{
-                            "walletId":"456789"
-                          } 
+  "bookId":"6900aca458ec212ff7e3b45c"
 }
 
-### payment
+### pay a fine, step 2: verify the result Razorpay Checkout returned in the browser
+POST http://localhost:8008/transaction-api/verify
+Content-Type: application/json
+
+{
+  "razorpay_order_id":"order_xxx",
+  "razorpay_payment_id":"pay_xxx",
+  "razorpay_signature":"signature_from_checkout"
+}
+
+### all payments (admin)
 GET http://localhost:8008/transaction-api/read-transaction

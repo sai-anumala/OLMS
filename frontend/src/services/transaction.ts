@@ -1,5 +1,7 @@
 import { apiRequest } from "./api";
-import type { PaymentFormType } from "../types/FineType";
+import type { RazorpaySuccessType } from "../types/FineType";
 
-export const payFine = (payment: PaymentFormType) => apiRequest("/transaction-api/transaction", "POST", payment);
+// the server works out the fine; the client only says which book
+export const createPaymentOrder = (bookId: string) => apiRequest("/transaction-api/order", "POST", { bookId });
+export const verifyPayment = (result: RazorpaySuccessType) => apiRequest("/transaction-api/verify", "POST", result);
 export const getTransactions = () => apiRequest("/transaction-api/read-transaction");

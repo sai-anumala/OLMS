@@ -1,82 +1,22 @@
-import type { BorrowedBookType } from "../../types/UserType";
 import { useAuth } from "../../store/AuthContextProvider";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { Modal } from "react-bootstrap";
-import type { PaymentDetailsType, PaymentFormType } from "../../types/FineType";
 import { useNavigate } from "react-router";
 import { IoNavigateCircleOutline } from "react-icons/io5";
- 
-type PaymentFormData = {
-  paymentMethod: "card" | "wallet" | "upi";
-  cardNumber?: string;
-  expiry?: string;
-  cvv?: string;
-  walletId?: string;
-  upiId?: string;
-};
- 
+
 function BorrowedBooksList() {
   const { currentUser, returnBook, payFine }=useAuth();
- 
-  const [selectedMethod, setSelectedMethod]=useState<"card"|"wallet"|"upi">("card");
-  const {register,handleSubmit,formState: { errors }} = useForm<PaymentFormData>();
   const navigate=useNavigate()
- 
-  //to open Modal
-  const [showModal, setShowModal] = useState(false);
-  const [selectedFine, setSelectedFine] = useState<BorrowedBookType>({
-    bookId: "",
-    borrowDate: "",
-    fine: 0,
-    dueDate: "",
-  });
- 
-  // book details come attached to each borrowed record from the server
-  const book=selectedFine.book
- 
- 
-  //to confirm payment
-  const confirmPayment=(data: PaymentFormData) => {
-    setShowModal(false);
-    let paymentInfo:PaymentDetailsType;
+  // book whose Razorpay checkout is open, so its button can't be clicked twice
+  const [payingBookId, setPayingBookId]=useState<string | null>(null)
 
-    if (data.paymentMethod==="card") {
-      // the CVV is validated in the form but never sent or stored
-      paymentInfo={
-        card_number:data.cardNumber ?? "",
-        exp_date:data.expiry ?? ""
-      };
-    } else if(data.paymentMethod==="upi") {
-      paymentInfo={
-        upiId:data.upiId ?? ""
-      };
-    } else if (data.paymentMethod==="wallet") {
-      paymentInfo={
-        walletId:data.walletId ?? ""
-      };
-    } else {
-      throw new Error("Invalid payment method");
-    }
-
-    const paymentDetails:PaymentFormType = {
-      bookId: selectedFine.bookId!,
-      amount: selectedFine.fine,
-      paymentMethod: data.paymentMethod,
-      paymentDetails: paymentInfo
-    };
-    // paying the fine also returns the book on the server
-    payFine(paymentDetails)
+  // paying the fine opens Razorpay checkout; on success the server returns the book
+  const handlePayFineClick = async (bookId: string) => {
+    setPayingBookId(bookId);
+    await payFine(bookId);
+    setPayingBookId(null);
   };
- 
- 
+
   const borrowedDetails = currentUser?.borrowed_books || [];
- 
-  //to open Modal
-  const handlePayFineClick = (borrowObj: BorrowedBookType) => {
-    setSelectedFine(borrowObj);
-    setShowModal(true);
-  };
 
   // navigate handler
   const handleNavigate=()=>navigate("/user/books")
@@ -85,10 +25,6 @@ function BorrowedBooksList() {
     if (currentUser && currentUser._id) {
       returnBook(bookId);
     }
-  }
- 
-  function handleclose() {
-    setShowModal(false);
   }
  
   return (
@@ -156,9 +92,10 @@ function BorrowedBooksList() {
                       {borrowObj.fine > 0 ? (
                         <button
                           className="btn btn-sm btn-dark"
-                          onClick={() => handlePayFineClick(borrowObj)}
+                          disabled={payingBookId !== null}
+                          onClick={() => borrowObj.bookId && handlePayFineClick(borrowObj.bookId)}
                         >
-                          Pay Fine
+                          {payingBookId === borrowObj.bookId ? "Opening..." : "Pay Fine"}
                         </button>
                       ) : (
                         <button className="btn btn-sm btn-dark" disabled>
@@ -188,177 +125,6 @@ function BorrowedBooksList() {
           </div>
         </div> }
  
-      {/* Payment Modal */}
-      <Modal show={showModal} centered backdrop="static">
-        <form onSubmit={handleSubmit(confirmPayment)}>
-          <div className="modal-content border-0 shadow-lg">
-            <div className="modal-header border-0 pb-0 d-flex justify-content-center position-relative">
-              <h5 className="modal-title fw-bold text-dark">Make Payment</h5>
-              <button type="button" className="btn-close position-absolute end-0 top-0 mt-2 me-2" onClick={handleclose}></button>
-            </div>
- 
-            <div className="modal-body pt-2 px-4">
-              {/* Summary */}
-              <div className="card bg-light p-3 mb-4 border-0">
-                <h6 className="text-secondary mb-2 text-center">
-                  Payment for <span className="text-dark fw-semibold">{book?.title}</span>
-                </h6>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span className="fw-normal fs-6 text-muted">Fine Amount:</span>
-                  <strong className="fs-4 text-danger">₹{selectedFine.fine.toFixed(2)}</strong>
-                </div>
-              </div>
- 
-              {/* Payment Method */}
-              <div className="mb-4">
-                <label className="form-label fw-bold text-dark mb-3 ms-2">Select Payment Method</label>
-                <div className="d-flex gap-5 justify-content-center flex-wrap">
-                  {["card", "upi", "wallet"].map((method) => (
-                    <div key={method}>
-                      <input
-                        type="radio"
-                        className="btn-check"
-                        id={`radio-${method}`}
-                        value={method}
-                        {...register("paymentMethod")}
-                        onClick={() => setSelectedMethod(method as "card" | "upi" | "wallet")}
-                      />
-                      <label
-                        className={`btn ${
-                          selectedMethod === method ? "btn-dark" : "btn-outline-secondary"
-                        }`}
-                        htmlFor={`radio-${method}`}
-                        style={{ minWidth: "80px", textAlign: "center", padding:"3px",}}
-                      >
-                        {method === "card" && <i className="bi bi-credit-card-2-back me-2"></i>}
-                        {method === "upi" && <i className="bi bi-cash me-2"></i>}
-                        {method === "wallet" && <i className="bi bi-wallet2 me-2"></i>}
-                        {method.charAt(0).toUpperCase() + method.slice(1)}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
- 
-              {/* Conditional Fields */}
-              <div className="p-3 border rounded">
-                {selectedMethod === "card" && (
-                  <div className="row g-3">
- 
-                    <div className="col-12">
-                      <label className="form-label small text-muted">Card Number</label>
-                      <input
-                        type="text"
-                         {...register("cardNumber", {
-                          required: "Card number is required",
-                          pattern: {
-                            value: /^\d{16}$/,
-                            message: "Card number must be exactly 16 digits"
-                          }
-                        })}
-                        className="form-control form-control"
-                        placeholder="Enter card number"
-                      />
-                      {errors.cardNumber && (
-                    <p className="text-danger small">{errors.cardNumber.message}</p>
-                    )}
-                    </div>
-                   
-                    <div className="col-6">
-                      <label className="form-label small text-muted">Expiry Date</label>
-                      <input
-                        type="text"
-                          {...register("expiry", {
-                        required: "Expiry date is required",
-                        pattern: {
-                          value: /^(0[1-9]|1[0-2])\/\d{2}$/,
-                          message: "Expiry must be in MM/YY format"
-                        }
-                      })}
-                        className="form-control form-control-sm"
-                        placeholder="MM/YY"
-                      />
-                      {errors.expiry && (
-                        <p className="text-danger small">{errors.expiry.message}</p>
-                      )}
-                    </div>
- 
-                    <div className="col-6">
-                      <label className="form-label small text-muted">CVV</label>
-                      <input
-                        type="text"
-                          {...register("cvv", {
-                          required: "CVV is required",
-                          pattern: {
-                            value: /^\d{3,4}$/,
-                            message: "CVV must be 3 or 4 digits"
-                          }
-                        })}
-                        className="form-control form-control-sm"
-                        placeholder="***"
-                        maxLength={4}
-                      />
-                      {errors.cvv && (
-                        <p className="text-danger small">{errors.cvv.message}</p>
-                      )}
-                    </div>
- 
-                  </div>
-                )}
- 
-                  {selectedMethod === "upi" && (
-                <div className="mb-3">
-                  <label className="form-label small text-muted">UPI ID</label>
-                  <input
-                    type="text"
-                      {...register("upiId", {
-                      required: "UPI ID is required",
-                      pattern: {
-                        value: /^[\w.-]+@[\w.-]+$/,
-                        message: "Enter a valid UPI ID (e.g., name@bank)"
-                      }
-                    })}
-                    className="form-control form-control-sm"
-                    placeholder="example@upi"
-                  />
-                  {errors.upiId && (
-                    <p className="text-danger small">{errors.upiId.message}</p>
-                  )}
-                </div>
-              )}
- 
-              {selectedMethod === "wallet" && (
-                <div className="mb-3">
-                  <label className="form-label small text-muted">Wallet ID / Phone Number</label>
-                  <input
-                    type="text"
-                        {...register("walletId", {
-                        required: "Wallet ID is required",
-                        pattern: {
-                          value: /^\d{10}$/,
-                          message: "Wallet ID must be a 10-digit phone number"
-                        }
-                      })}
-                    className="form-control form-control-sm"
-                    placeholder="Enter Wallet ID or Phone"
-                  />
-                   {errors.walletId && (
-                    <p className="text-danger small">{errors.walletId.message}</p>
-                  )}
-                </div>
-              )}
- 
-              </div>
-            </div>
- 
-            <div className="modal-footer border-0 p-4 pt-0">
-              <button type="submit" className="btn btn-dark w-100 py-2">
-                Confirm Payment
-              </button>
-            </div>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

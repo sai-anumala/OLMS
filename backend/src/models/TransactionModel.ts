@@ -1,83 +1,30 @@
 import { Schema, model } from "mongoose";
-import {
-  CardDetailsType,
-  TransactionType,
-  UpiType,
-  WalletType
-} from "../types/TransactionType";
+import { TransactionType } from "../types/TransactionType";
 
-// Subschemas
-const cardDetailsSchema = new Schema<CardDetailsType>({
-  card_number: { 
-    type: String, 
-    required: true 
-},
-  exp_date: { 
-    type: String, 
-    required: true 
-},
-  cvv: { 
-    type: String, 
-    required: true 
-},
-},{ 
-    _id: false 
-});
-
-const upiDetailsSchema = new Schema<UpiType>({
-  upiId: {
-     type: String, 
-     required: true 
-    },
-    }, 
-    {
-        _id: false
-     });
-
-const walletDetailsSchema = new Schema<WalletType>({
-  walletId: { 
-    type: String, 
-    required: true 
-},
-}, { _id: false });
-
+// One fine payment; razorpayPaymentId makes processing the same payment twice impossible
 const paymentsSchema = new Schema({
-  bookId: {
-    type: Schema.Types.ObjectId,
-    ref: "books",
-    required: true
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  paymentMethod: {
-    type: String,
-    required: true
-  },
-  paymentDetails: {
-    type: Schema.Types.Mixed, // Accepts any of the three types
-    required: true
-  }
+  bookId: { type: Schema.Types.ObjectId, ref: "books", required: true },
+  amount: { type: Number, required: true }, // rupees
+  paymentMethod: { type: String, required: true }, // upi, card, wallet, netbanking...
+  paymentDetails: { type: Schema.Types.Mixed, required: true }, // safe display info only (never full card numbers)
+  razorpayPaymentId: { type: String },
+  razorpayOrderId: { type: String },
 }, {
   strict: "throw",
   versionKey: false,
-  timestamps: true // adds createdAt and updatedAt for each payment
+  timestamps: true,
 });
 
-// Transaction schema
+// One document per user holding all their payments
 const transactionSchema = new Schema<TransactionType>({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: "users",
-    required: true
-  },
-  payments: [paymentsSchema]
+  userId: { type: Schema.Types.ObjectId, ref: "users", required: true },
+  payments: [paymentsSchema],
 }, {
   strict: "throw",
   versionKey: false,
-  timestamps: true // adds createdAt and updatedAt for the transaction document
+  timestamps: true,
 });
 
-// Model
+transactionSchema.index({ "payments.razorpayPaymentId": 1 });
+
 export const TransactionModel = model("Transaction", transactionSchema);

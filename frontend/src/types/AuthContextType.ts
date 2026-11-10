@@ -1,5 +1,4 @@
 
-import type { PaymentFormType } from "./FineType";
 import type { UserType } from "./UserType";
 
 export type LoginType={
@@ -30,7 +29,6 @@ export type AuthContextType={
   bookBorrow:(bookId:string)=>void;
   returnBook:(bookId:string)=>void;
   cartBooksBorrow:(books:string[])=>void
-  payFine:(fineDetails:PaymentFormType)=>void
-  // payFine:(fineDetails:string)=>void
+  payFine:(bookId:string)=>Promise<void> // opens Razorpay checkout for the fine on this book
   pageLoading:boolean;
 };

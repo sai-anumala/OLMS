@@ -20,8 +20,8 @@ app.set("trust proxy", 1);
 // CORS: which frontends may call this API (see middlewares/cors.ts and FRONTEND_URL)
 app.use(corsMiddleware())
  
-// body parser middleware
-app.use(exp.json())
+// body parser; keeps the raw bytes so the Razorpay webhook signature can be checked
+app.use(exp.json({ verify: (req, _res, buf) => { (req as any).rawBody = buf; } }))
 
 // cookie parser middleware
 app.use(cookieParser())

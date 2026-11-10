@@ -1,38 +1,16 @@
-// The CVV is only checked in the form and is never sent to the server
-export type CardDetailsType={
-  card_number: string;
-  exp_date: string;
+// Razorpay order created by the server for a fine (amount in paise)
+export type PaymentOrderType = {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  bookTitle: string;
+  prefill: { name?: string; email?: string; contact?: string };
 };
 
-// what the server keeps for a card payment (never the full number)
-export type StoredCardDetailsType={
-  last4: string;
+// what Razorpay Checkout hands back after a successful payment
+export type RazorpaySuccessType = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 };
-
-export type UpiDetailsType={
-  upiId: string;
-};
-
-export type WalletDetailsType={
-  walletId: string;
-};
-
-export type PaymentMethodType="card" | "upi" | "wallet";
-
-export type PaymentDetailsType=CardDetailsType | StoredCardDetailsType | UpiDetailsType | WalletDetailsType;
-
-// the payer is taken from the login session on the server, so no userId is sent
-export interface PaymentFormType{
-  bookId:string; 
-  amount:number;
-  paymentMethod:PaymentMethodType;
-  paymentDetails:PaymentDetailsType;
-  createdAt?:string
-  _id?:string
-}
-
-export interface TransactionFormType {
-  _id?:string
-  userId:string;
-  payments:PaymentFormType[];
-}

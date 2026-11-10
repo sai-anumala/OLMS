@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import toast from 'react-hot-toast';
 import type { AuthContextType, LoginType } from '../types/AuthContextType';
 import type { UserType } from '../types/UserType';
-import type { PaymentFormType } from '../types/FineType';
+import type { PaymentOrderType } from '../types/FineType';
 import type { ApiResult } from '../services/api';
 import * as userApi from '../services/user';
-import { payFine as payFineApi } from '../services/transaction';
+import { createPaymentOrder, verifyPayment } from '../services/transaction';
+import { loadRazorpay, openCheckout } from '../utils/razorpay';
 import { useBooks } from './BooksContext';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -70,8 +71,27 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     applyUserResult(await userApi.borrowCartBooks(books), { reloadBooks: true });
   const returnBook = async (bookId: string) =>
     applyUserResult(await userApi.returnBook(bookId), { reloadBooks: true });
-  const payFine = async (payment: PaymentFormType) =>
-    applyUserResult(await payFineApi(payment), { reloadBooks: true });
+  // 1) server creates an order for the fine, 2) Razorpay checkout, 3) server verifies and returns the book
+  const payFine = async (bookId: string) => {
+    const orderRes = await createPaymentOrder(bookId);
+    if (orderRes.status !== 200) {
+      toast.error(orderRes.data.message);
+      return;
+    }
+    if (!(await loadRazorpay())) {
+      toast.error("Could not load the payment page. Check your connection and try again.");
+      return;
+    }
+    const outcome = await openCheckout(orderRes.data.payload as PaymentOrderType);
+    if (outcome.status === "cancelled") {
+      toast("Payment cancelled", { icon: "ℹ️" });
+      return;
+    }
+    const toastId = toast.loading("Confirming payment...");
+    const res = await verifyPayment(outcome.result);
+    toast.dismiss(toastId);
+    applyUserResult(res, { reloadBooks: true });
+  };
 
   useEffect(() => {
     refreshPage();
