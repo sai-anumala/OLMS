@@ -12,6 +12,7 @@ export function SearchTermProvider({children}: { children: React.ReactNode }){
     return(<SearchTermContext.Provider value={{searchTerm,setSearchTerm}}>{children}</SearchTermContext.Provider>)
 }
  
+// eslint-disable-next-line react-refresh/only-export-components -- context hook lives with its provider
 export function useSearchTermContext(){
     const context= useContext(SearchTermContext)
         if (!context) throw new Error("useSearchTermContext must be used within SearchTermProvider");
