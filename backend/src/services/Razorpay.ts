@@ -27,7 +27,12 @@ const request = async <T>(method: "GET" | "POST", path: string, body?: unknown):
   const data: any = await res.json().catch(() => ({}));
   if (!res.ok) {
     console.error(`Razorpay ${method} ${path} failed:`, res.status, data?.error?.description);
-    throw new RazorpayError(data?.error?.description || "Payment gateway error", res.status === 401 ? 503 : 502);
+    if (res.status === 401) {
+      // never log the keys; the prefix shows whether a live or test key was used
+      console.error(`Razorpay rejected RAZORPAY_KEY_ID (${keyId().slice(0, 9)}…): check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are the same pair, without quotes or spaces`);
+      throw new RazorpayError("Online payments are temporarily unavailable. Please try again later.", 503);
+    }
+    throw new RazorpayError("The payment gateway is not responding. Please try again in a moment.", 502);
   }
   return data as T;
 };
@@ -59,6 +64,10 @@ export const createOrder = (amountInRupees: number, receipt: string, notes: Reco
 export const fetchOrder = (orderId: string) => request<RazorpayOrder>("GET", `/v1/orders/${encodeURIComponent(orderId)}`);
 
 export const fetchPayment = (paymentId: string) => request<RazorpayPayment>("GET", `/v1/payments/${encodeURIComponent(paymentId)}`);
+
+// all payment attempts made for an order (newest first)
+export const fetchOrderPayments = async (orderId: string) =>
+  (await request<{ items: RazorpayPayment[] }>("GET", `/v1/orders/${encodeURIComponent(orderId)}/payments`)).items ?? [];
 
 export const capturePayment = (payment: RazorpayPayment) =>
   request<RazorpayPayment>("POST", `/v1/payments/${encodeURIComponent(payment.id)}/capture`, {

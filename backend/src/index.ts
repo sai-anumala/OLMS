@@ -13,6 +13,7 @@ import { chatbot } from "./controllers/BookControllers";
 import expressAsyncHandler from "express-async-handler";
 import { rateLimit } from "./middlewares/rateLimit";
 import { serializeUser } from "./services/UserView";
+import { RazorpayError } from "./services/Razorpay";
 
 // create server
 const app=exp();
@@ -64,7 +65,8 @@ app.post("/chatbot",rateLimit({windowMs:60*1000,max:10}),expressAsyncHandler(cha
 // Error handling middleware
 app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
 
-  let statusCode = err.statusCode || 500;
+  let statusCode = Number(err.statusCode || err.status) || 500;
+  if (statusCode < 400 || statusCode > 599) statusCode = 500;
   let message = err.message || "Internal Server Error";
 
   // Mongoose validation error
@@ -85,14 +87,18 @@ app.use((err:any,req:Request,res:Response,next:NextFunction)=>{
     message = `Invalid ${err.path}`;
   }
 
-  // don't leak internal error details to clients
-  if (statusCode >= 500) {
+  // don't leak internal error details to clients (payment gateway errors carry a safe message)
+  if (err instanceof RazorpayError) {
+    statusCode = err.status;
+  } else if (statusCode >= 500) {
     console.error(err);
-    message = "Internal Server Error";
+    message = "Something went wrong on the server. Please try again in a moment.";
   }
 
+  // `message` is what the frontend shows; `error` kept for older clients
   res.status(statusCode).json({
     success: false,
+    message,
     error: message,
   });
 

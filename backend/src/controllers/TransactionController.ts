@@ -132,6 +132,31 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
   res.status(result.status).json({ message: result.message, payload: result.payload });
 };
 
+// Ask Razorpay directly whether an order was paid (no browser signature needed) and finish it.
+// Used when checkout closed early, verify failed, or the page reloaded during a UPI app payment.
+export const reconcilePayment = async (req: Request, res: Response): Promise<void> => {
+  const orderId = asString(req.body?.orderId);
+  const userId = (req as any).user._id.toString();
+  if (!orderId) {
+    res.status(400).json({ message: "Missing order id" });
+    return;
+  }
+  const order = await razorpay.fetchOrder(orderId);
+  if (order.notes?.["userId"] !== userId) {
+    res.status(403).json({ message: "This payment belongs to another user" });
+    return;
+  }
+  const attempts = await razorpay.fetchOrderPayments(orderId);
+  const paid = attempts.find((p) => p.status === "captured") ?? attempts.find((p) => p.status === "authorized");
+  if (!paid) {
+    const user = await UserModel.findById(userId).select("-password");
+    res.status(202).json({ message: "Payment not completed yet", payload: await serializeUser(user) });
+    return;
+  }
+  const result = await finalizePayment(paid.id, orderId, userId);
+  res.status(result.status).json({ message: result.message, payload: result.payload });
+};
+
 // Razorpay webhook (payment.captured / order.paid): finishes payments when the browser closed early
 export const razorpayWebhook = async (req: Request, res: Response): Promise<void> => {
   const rawBody: Buffer | undefined = (req as any).rawBody;

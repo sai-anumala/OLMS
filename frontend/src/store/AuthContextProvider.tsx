@@ -5,8 +5,8 @@ import type { UserType } from '../types/UserType';
 import type { PaymentOrderType } from '../types/FineType';
 import type { ApiResult } from '../services/api';
 import * as userApi from '../services/user';
-import { createPaymentOrder, verifyPayment } from '../services/transaction';
-import { loadRazorpay, openCheckout } from '../utils/razorpay';
+import { createPaymentOrder, reconcilePayment, verifyPayment } from '../services/transaction';
+import { clearPendingOrder, loadRazorpay, openCheckout, readPendingOrder, savePendingOrder } from '../utils/razorpay';
 import { useBooks } from './BooksContext';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -54,12 +54,15 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     setCurrentUser(null);
   };
 
-  // restore the session after a page refresh; 401 just means "not logged in"
+  // restore the session after a page refresh
   const refreshPage = async () => {
     const res = await userApi.refreshSession();
     if (res.status === 200) setCurrentUser(res.data.payload as UserType);
-    else if (res.status === 403 || res.status === 0) toast.error(res.data.message);
+    else if (res.status !== 401) toast.error(res.data.message); // 401 just means "not logged in"
     setPageLoading(false);
+    // a payment was in progress when the page reloaded (common with UPI apps on mobile)
+    const pendingOrder = res.status === 200 ? readPendingOrder() : null;
+    if (pendingOrder) await settlePendingPayment(pendingOrder);
   };
 
   const updateUser = async (user: UserType) => applyUserResult(await userApi.updateProfile(user));
@@ -71,7 +74,28 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     applyUserResult(await userApi.borrowCartBooks(books), { reloadBooks: true });
   const returnBook = async (bookId: string) =>
     applyUserResult(await userApi.returnBook(bookId), { reloadBooks: true });
-  // 1) server creates an order for the fine, 2) Razorpay checkout, 3) server verifies and returns the book
+
+  // ask the server whether an order was paid. "error" = temporary problem (keep the order to retry later)
+  const settlePendingPayment = async (orderId: string): Promise<"paid" | "unpaid" | "error"> => {
+    const res = await reconcilePayment(orderId);
+    if (res.status === 200) {
+      clearPendingOrder();
+      applyUserResult(res, { reloadBooks: true });
+      return "paid";
+    }
+    if (res.status === 202) {
+      if (res.data.payload) setCurrentUser(res.data.payload as UserType);
+      return "unpaid";
+    }
+    if ([400, 403, 404].includes(res.status)) {
+      clearPendingOrder(); // not this user's order or unknown: nothing to retry
+      return "unpaid";
+    }
+    return "error"; // 0, 429, 5xx: retried on the next page load
+  };
+
+  // 1) server creates an order for the fine, 2) Razorpay checkout, 3) server verifies and returns the book.
+  // If the browser misses the result (popup closed, verify failed), the server asks Razorpay directly.
   const payFine = async (bookId: string) => {
     const orderRes = await createPaymentOrder(bookId);
     if (orderRes.status !== 200) {
@@ -82,19 +106,35 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
       toast.error("Could not load the payment page. Check your connection and try again.");
       return;
     }
-    const outcome = await openCheckout(orderRes.data.payload as PaymentOrderType);
-    if (outcome.status === "cancelled") {
-      toast("Payment cancelled", { icon: "ℹ️" });
-      return;
-    }
+    const order = orderRes.data.payload as PaymentOrderType;
+    savePendingOrder(order.orderId);
+    const outcome = await openCheckout(order);
     const toastId = toast.loading("Confirming payment...");
-    const res = await verifyPayment(outcome.result);
+
+    if (outcome.status === "paid") {
+      const res = await verifyPayment(outcome.result);
+      if (res.status === 200) {
+        toast.dismiss(toastId);
+        clearPendingOrder();
+        applyUserResult(res, { reloadBooks: true });
+        return;
+      }
+    }
+    // popup closed or verify failed: the user may still have paid (e.g. in a UPI app)
+    const result = await settlePendingPayment(order.orderId);
     toast.dismiss(toastId);
-    applyUserResult(res, { reloadBooks: true });
+    if (result === "unpaid") {
+      clearPendingOrder();
+      if (outcome.status === "cancelled") toast("Payment cancelled", { icon: "ℹ️" });
+      else toast.error("The payment was not completed. No money was taken.");
+    } else if (result === "error") {
+      toast.error("We couldn't confirm the payment right now. If money was deducted, it will update when you reopen the page.");
+    }
   };
 
   useEffect(() => {
     refreshPage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- restore the session once on load
   }, []);
 
   const contextValue = useMemo(() => ({

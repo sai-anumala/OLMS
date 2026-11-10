@@ -1,31 +1,19 @@
-import mongoose, {connect} from "mongoose"
-import {config} from "dotenv"
+import { connect } from "mongoose"
+import { config } from "dotenv"
 
 config()
-// connect to mongodb
-const DB_URI=process.env["DB_URI"];
-export const connectDB=async()=>{
-    try{
-        if(DB_URI){        
-            await connect(DB_URI)
-            console.log("Connected to MongoDB");
-        }
-        else{
-            throw new Error("Mongodb url is not provided correctly")
-        }
-    }
-    catch(err){
-        console.error("MongoDB connection error:", err);
-        // abort all
-        process.exit(1)
-    }
-}
 
-// // close the mongodb connection
-// export const closeDB=async():Promise<void>=>{
-//     try{
-//         await connection.close()
-//     }
-//     catch(err){
-//     }
-// }
+const DB_URI = process.env["DB_URI"];
+
+// Connect to MongoDB; if the database becomes unreachable later, queries fail after 5s
+// (instead of the default 30s) so users get an error message quickly
+export const connectDB = async () => {
+  try {
+    if (!DB_URI) throw new Error("Mongodb url is not provided correctly")
+    await connect(DB_URI, { serverSelectionTimeoutMS: 5000 })
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    process.exit(1)
+  }
+}

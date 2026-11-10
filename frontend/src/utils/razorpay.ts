@@ -65,3 +65,29 @@ export const openCheckout = (order: PaymentOrderType) =>
     });
     checkout.open();
   });
+
+// Remember the order being paid, so the result can be fetched if the page reloads
+// (e.g. the browser restarts the tab while the user is in a UPI app). Storage may be unavailable.
+const PENDING_KEY = "olms_pending_payment";
+const PENDING_MAX_AGE_MS = 30 * 60 * 1000;
+
+export const savePendingOrder = (orderId: string) => {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ orderId, at: Date.now() }));
+  } catch { /* private mode or storage blocked */ }
+};
+
+export const readPendingOrder = (): string | null => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || "null");
+    if (saved?.orderId && Date.now() - saved.at < PENDING_MAX_AGE_MS) return saved.orderId;
+    localStorage.removeItem(PENDING_KEY);
+  } catch { /* ignore */ }
+  return null;
+};
+
+export const clearPendingOrder = () => {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch { /* ignore */ }
+};
